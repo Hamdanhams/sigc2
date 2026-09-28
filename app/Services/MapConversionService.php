@@ -12,7 +12,8 @@ class MapConversionService
     protected int $maxZoom = 19;
 
     protected function gdalEnv(): array
-    {
+{
+    if (PHP_OS_FAMILY === 'Windows') {
         $osgeoRoot = 'C:\Users\muhnu\AppData\Local\Programs\OSGeo4W';
 
         return [
@@ -22,6 +23,12 @@ class MapConversionService
             'GDAL_PAM_ENABLED' => 'NO',
         ];
     }
+
+    // Linux/production: biarkan GDAL pakai path bawaan sistem
+    return [
+        'GDAL_PAM_ENABLED' => 'NO',
+    ];
+}
 
     public function convert(mixed $peta): void
     {

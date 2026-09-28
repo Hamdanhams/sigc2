@@ -53,8 +53,11 @@ class SebaranFsbsResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('inisial_front')->label('Front')->searchable(),
-                Tables\Columns\TextColumn::make('titik_produksi')->searchable(),
+                Tables\Columns\TextColumn::make('inisial_front')
+                    ->label('Front')
+                    ->searchable(query: fn(Builder $query, string $search): Builder => $query->where('inisial_front', 'like', "{$search}%")),
+                Tables\Columns\TextColumn::make('titik_produksi')
+                    ->searchable(query: fn(Builder $query, string $search): Builder => $query->where('titik_produksi', 'like', "{$search}%")),
                 Tables\Columns\TextColumn::make('elevasi'),
                 Tables\Columns\TextColumn::make('koordinat_x'),
                 Tables\Columns\TextColumn::make('koordinat_y'),
@@ -62,6 +65,8 @@ class SebaranFsbsResource extends Resource
                 Tables\Columns\TextColumn::make('fe')->numeric(decimalPlaces: 2),
                 Tables\Columns\TextColumn::make('si_mg_ratio')->label('S/M')->numeric(decimalPlaces: 2),
             ])
+            ->deferLoading()
+            ->paginationPageOptions([10, 25, 50])
             ->filters([
                 //
             ])
