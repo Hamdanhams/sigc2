@@ -12,6 +12,7 @@ class UserPegawai extends Model
     protected $fillable = [
         'nama',
         'npp',
+        'jabatan',
         'ttd',
         'status',
         'username',

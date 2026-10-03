@@ -26,7 +26,7 @@ class MasterDataController extends Controller
     public function userPegawais()
     {
         return response()->json(
-            UserPegawai::where('status', 'active')->orderBy('nama')->get(['id', 'nama', 'npp'])
+            UserPegawai::where('status', 'active')->where('jabatan', 'pengawas')->orderBy('nama')->get(['id', 'nama', 'npp'])
         );
     }
 }

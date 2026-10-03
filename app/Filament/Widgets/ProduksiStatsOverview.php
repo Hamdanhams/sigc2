@@ -20,7 +20,7 @@ class ProduksiStatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color('primary'),
 
-            Stat::make('Menunggu Approval', Produksi::where('status_approval', 'menunggu')->count())
+            Stat::make('Menunggu Approval', Produksi::whereIn('status_approval', ['menunggu', 'menunggu_wuh'])->count())
                 ->description('Laporan produksi belum disetujui')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('warning'),

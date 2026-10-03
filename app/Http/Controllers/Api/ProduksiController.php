@@ -218,6 +218,7 @@ class ProduksiController extends Controller
                 'rencana_produksi_besok' => strtoupper($data['rencana_produksi_besok'] ?? ''),
                 'status_approval' => 'menunggu',
                 'catatan_penolakan' => null,
+                'ditolak_oleh_jabatan' => null,
             ]);
 
             $produksi->details()->delete();

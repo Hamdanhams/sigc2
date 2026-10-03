@@ -71,6 +71,7 @@ class AuthController extends Controller
                 'id' => $userPegawai->id,
                 'nama' => $userPegawai->nama,
                 'npp' => $userPegawai->npp,
+                'jabatan' => $userPegawai->jabatan,
             ],
         ]);
     }

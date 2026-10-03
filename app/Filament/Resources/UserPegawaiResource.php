@@ -31,6 +31,13 @@ class UserPegawaiResource extends Resource
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
+                Forms\Components\Select::make('jabatan')
+                    ->options([
+                        'pengawas' => 'Pengawas',
+                        'work_unit_head' => 'Work Unit Head',
+                    ])
+                    ->default('pengawas')
+                    ->required(),
                 Forms\Components\FileUpload::make('ttd')
                     ->label('Tanda Tangan')
                     ->image()
@@ -65,6 +72,8 @@ class UserPegawaiResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('nama')->searchable(),
                 Tables\Columns\TextColumn::make('npp')->label('NPP')->searchable(),
+                Tables\Columns\BadgeColumn::make('jabatan')
+                    ->formatStateUsing(fn($state) => $state === 'work_unit_head' ? 'Work Unit Head' : 'Pengawas'),
                 Tables\Columns\TextColumn::make('username')
                     ->label('Username')
                     ->placeholder('Belum diatur')

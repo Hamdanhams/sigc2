@@ -60,7 +60,7 @@ class ProduksiResource extends Resource
                             ->relationship('pic2', 'nama'),
                         Forms\Components\Select::make('user_pegawai_id')
                             ->label('User Pegawai')
-                            ->relationship('userPegawai', 'nama'),
+                            ->relationship('userPegawai', 'nama', fn($query) => $query->where('jabatan', 'pengawas')),
                         Forms\Components\FileUpload::make('dokumentasi_produksi')
                             ->multiple()
                             ->disk('cloudinary')

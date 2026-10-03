@@ -22,6 +22,7 @@ class Produksi extends Model
         'rencana_produksi_besok',
         'status_approval',
         'catatan_penolakan',
+        'ditolak_oleh_jabatan',
     ];
 
     protected $casts = [

@@ -28,7 +28,7 @@ class LatestProduksi extends BaseWidget
                 Tables\Columns\TextColumn::make('pic1.nama')->label('PIC'),
                 Tables\Columns\BadgeColumn::make('status_approval')
                     ->colors([
-                        'warning' => 'menunggu',
+                        'warning' => ['menunggu', 'menunggu_wuh'],
                         'success' => 'disetujui',
                         'danger' => 'ditolak',
                     ]),
