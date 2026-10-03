@@ -125,9 +125,17 @@ Lihat rekap lengkap di riwayat chat — semua modul ini SELESAI dan berfungsi. F
 
 ---
 
-## 7. PEKERJAAN BESAR YANG SEDANG DIRENCANAKAN (BELUM DIKODING SAMA SEKALI)
+## 7. PEKERJAAN BESAR
 
-Requirement sudah dikumpulkan lengkap lewat diskusi, tapi implementasi belum dimulai. Urutan pengerjaan yang disepakati:
+**STATUS (3 Okt 2026):** Bagian **A (Approval 2 Lapis, Fase 1–5) SUDAH DIKODING** — belum dites end-to-end di device. Fase 1 live di VPS; Fase 3 & backend Fase 5 baru commit lokal (belum push/pull VPS). Bagian B (Rekonsiliasi) belum dimulai.
+
+Catatan implementasi A yang tidak jelas dari kode:
+- Status laporan: `menunggu` → `menunggu_wuh` → `disetujui`; `ditolak` = menunggu revisi (+ `catatan_penolakan`, `ditolak_oleh_jabatan`). Revisi mereset ke `menunggu`.
+- FSBS: grup = Front + tanggal `created_at` dalam WITA (UTC+8) + status. Data FSBS lama & kiriman tanpa `user_pegawai_id` (APK lama) otomatis `disetujui`. Revisi FSBS = update di tempat (`PUT /my-fsbs/revisi`), `created_at` tidak berubah.
+- Work Unit Head memakai `PengawasHomeScreen` yang sama (label & status pending mengikuti `AuthService.getPendingStatus()`).
+- `sigc2_mobile` BUKAN repo git (tidak ada commit untuk sisi Flutter).
+
+Requirement awal & urutan pengerjaan yang disepakati:
 
 ### A. Approval 2 Lapis (Produksi & FSBS)
 
