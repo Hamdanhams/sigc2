@@ -23,10 +23,19 @@ class Fsbs extends Model
         'gridding',
         'ni_bm',
         'fe_bm',
+        'user_pegawai_id',
+        'status_approval',
+        'catatan_penolakan',
+        'ditolak_oleh_jabatan',
     ];
 
     public function personil()
     {
         return $this->belongsTo(Personil::class);
+    }
+
+    public function userPegawai()
+    {
+        return $this->belongsTo(UserPegawai::class);
     }
 }

@@ -18,6 +18,7 @@ class FsbsController extends Controller
             'koordinat_x' => 'nullable|numeric',
             'koordinat_y' => 'nullable|numeric',
             'personil_id' => 'required|exists:personils,id',
+            'user_pegawai_id' => 'nullable|exists:user_pegawais,id',
             'foto_material' => 'nullable|string',
             'keterangan' => 'nullable|string',
             'increment' => 'nullable|string',
@@ -51,6 +52,9 @@ class FsbsController extends Controller
             'koordinat_x' => $data['koordinat_x'] ?? null,
             'koordinat_y' => $data['koordinat_y'] ?? null,
             'personil_id' => $data['personil_id'],
+            'user_pegawai_id' => $data['user_pegawai_id'] ?? null,
+            // Klien lama (tanpa Pilih Pengawas) tidak punya jalur approval -> langsung disetujui.
+            'status_approval' => isset($data['user_pegawai_id']) ? 'menunggu' : 'disetujui',
             'foto_material' => $data['foto_material'] ?? null,
             'keterangan' => strtoupper($data['keterangan'] ?? ''),
             'increment' => strtoupper($data['increment'] ?? ''),

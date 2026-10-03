@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\SebaranFsbsController;
 use App\Http\Controllers\Api\PetaSebaranController;
 use App\Http\Controllers\Api\ApprovalController;
+use App\Http\Controllers\Api\FsbsApprovalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PermintaanController;
@@ -56,6 +57,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/approval/produksi', [ApprovalController::class, 'index']);
     Route::patch('/approval/produksi/{id}/approve', [ApprovalController::class, 'approve']);
     Route::patch('/approval/produksi/{id}/reject', [ApprovalController::class, 'reject']);
+
+    // Approval FSBS (per grup Front + Tanggal)
+    Route::get('/approval/fsbs', [FsbsApprovalController::class, 'index']);
+    Route::get('/approval/fsbs/plots', [FsbsApprovalController::class, 'show']);
+    Route::patch('/approval/fsbs/approve', [FsbsApprovalController::class, 'approve']);
+    Route::patch('/approval/fsbs/reject', [FsbsApprovalController::class, 'reject']);
 
     Route::post('/permintaan', [PermintaanController::class, 'store']);
     Route::get('/permintaan', [PermintaanController::class, 'index']);
