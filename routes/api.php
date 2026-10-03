@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\SebaranFsbsController;
 use App\Http\Controllers\Api\PetaSebaranController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\FsbsApprovalController;
+use App\Http\Controllers\Api\MyFsbsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PermintaanController;
@@ -39,8 +40,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fsbs', [FsbsController::class, 'store']);
     Route::get('/fsbs', [FsbsController::class, 'index']);
 
+    // Status & revisi FSBS milik Personil (per grup Front + Tanggal)
+    Route::get('/my-fsbs', [MyFsbsController::class, 'index']);
+    Route::get('/my-fsbs/plots', [MyFsbsController::class, 'plots']);
+    Route::put('/my-fsbs/revisi', [MyFsbsController::class, 'revise']);
+
     // Peta Layer
-    Route::get('/peta', [PetaLayerController::class, 'index']);
+    Route::get('/peta',[PetaLayerController::class, 'index']);
     Route::get('/peta/{id}/download', [PetaLayerController::class, 'download'])->name('api.peta.download');
 
     // Master Data
