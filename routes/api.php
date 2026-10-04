@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\PetaSebaranController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\FsbsApprovalController;
 use App\Http\Controllers\Api\MyFsbsController;
+use App\Http\Controllers\Api\RekonsiliasiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PermintaanController;
@@ -44,6 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-fsbs', [MyFsbsController::class, 'index']);
     Route::get('/my-fsbs/plots', [MyFsbsController::class, 'plots']);
     Route::put('/my-fsbs/revisi', [MyFsbsController::class, 'revise']);
+
+    // Rekonsiliasi (BM vs Real per minggu)
+    Route::get('/rekonsiliasi', [RekonsiliasiController::class, 'index']);
 
     // Peta Layer
     Route::get('/peta',[PetaLayerController::class, 'index']);
