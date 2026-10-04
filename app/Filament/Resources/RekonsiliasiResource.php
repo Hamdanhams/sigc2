@@ -99,7 +99,12 @@ class RekonsiliasiResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('minggu_ke')
                     ->label('Minggu')
-                    ->options(fn() => Rekonsiliasi::query()->distinct()->orderByDesc('tanggal_mulai')->pluck('minggu_ke', 'minggu_ke')->all()),
+                    ->options(fn() => Rekonsiliasi::query()
+                        ->selectRaw('minggu_ke, MAX(tanggal_mulai) as mulai_terakhir')
+                        ->groupBy('minggu_ke')
+                        ->orderByDesc('mulai_terakhir')
+                        ->pluck('minggu_ke', 'minggu_ke')
+                        ->all()),
                 Tables\Filters\SelectFilter::make('parameter')
                     ->options(['HGSO' => 'HGSO', 'LGSO' => 'LGSO', 'Waste' => 'Waste']),
             ])
