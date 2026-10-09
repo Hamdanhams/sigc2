@@ -7,6 +7,7 @@ use App\Filament\Resources\PersonilResource\RelationManagers;
 use App\Models\Personil;
 use App\Services\CutiService;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -91,7 +92,7 @@ class PersonilResource extends Resource
                             $record,
                             (int) $data['saldo_baru'],
                             $data['catatan'],
-                            auth()->user()?->name
+                            Auth::user()?->name
                         );
                         Notification::make()->title('Saldo cuti diperbarui')->success()->send();
                     }),
