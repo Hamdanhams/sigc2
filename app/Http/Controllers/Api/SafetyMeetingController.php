@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SafetyMeeting;
 use App\Models\UserPegawai;
+use App\Services\CloudinaryCleanupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -134,7 +135,13 @@ class SafetyMeetingController extends Controller
             return response()->json(['message' => 'Hanya pembuat yang boleh mengganti foto'], 403);
         }
 
+        $fotoLama = $sm->foto;
         $sm->update(['foto' => $request->foto]);
+
+        // Foto lama dihapus dari Cloudinary agar tidak menumpuk.
+        if ($fotoLama !== $request->foto) {
+            app(CloudinaryCleanupService::class)->hapusDariUrl($fotoLama);
+        }
 
         return response()->json($this->data($sm->load('pembuat:id,nama'), $userId));
     }
