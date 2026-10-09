@@ -131,7 +131,7 @@ Lihat rekap lengkap di riwayat chat — semua modul ini SELESAI dan berfungsi. F
 - **A (Approval 2 Lapis, Fase 1–5): SELESAI & live di VPS.**
 - **B (Rekonsiliasi): SELESAI & live di VPS.** Total ORE kadar = rata-rata TERTIMBANG BCM (sudah dikonfirmasi user). Form admin input per MINGGU (header sekali + blok HGSO/LGSO/Waste), logika di `RekonsiliasiService`.
 - **Safety Meeting (versi 1): SELESAI di Flutter** — foto + panel keterangan (logo Antam di `assets/images/antam_logo.png`), simpan ke galeri, menu HANYA di beranda Pengawas/WUH. Tanpa server.
-- **D (Arsip Safety Meeting): SUDAH DIKODING** (backend commit `d834dd2`, Flutter di repo mobile) — perlu `migrate` di VPS + build APK. **C (Cuti) dan E (Redesign menu): SUDAH DIRENCANAKAN, BELUM DIKERJAKAN** — tunggu perintah user. Lihat bagian C, D, E di bawah.
+- **D (Arsip Safety Meeting): SUDAH DIKODING** (backend commit `d834dd2`, Flutter di repo mobile) — perlu `migrate` di VPS + build APK. **C (Cuti): backend + Filament SELESAI (logika di `CutiService`; endpoint `/cuti`, `/cuti/hitung`, `/approval/cuti`), Flutter BELUM, ekspor PDF menunggu format user.** **E (Redesign menu): DIRENCANAKAN, BELUM DIKERJAKAN.** Lihat bagian C, D, E di bawah.
 - Repo Flutter: `github.com/Hamdanhams/sigc2_mobile` (branch `main`).
 
 Catatan implementasi A yang tidak jelas dari kode:
@@ -196,7 +196,7 @@ Begitu 3 dropdown terisi → tampilkan **grafik histogram** (2 batang: nilai BM 
 - **BCM**: dijumlahkan (HGSO + LGSO).
 - **Ni/Fe/SiO2/MgO** (kadar): rata-rata TERTIMBANG BCM (BCM dari sisi yang sama: BM dengan BCM BM, Real dengan BCM Real). Bukan rata-rata biasa.
 
-### C. Pengajuan Cuti (DIRENCANAKAN — BELUM DIKERJAKAN, tunggu perintah user)
+### C. Pengajuan Cuti (BACKEND + FILAMENT SELESAI 9 Okt 2026; FLUTTER BELUM; EKSPOR PDF MENUNGGU FORMAT USER)
 
 **Keputusan user (sudah final):**
 - Role baru: `pengawas_senior` ditambah ke enum `jabatan` di `user_pegawais` (kini: pengawas, work_unit_head). Hanya 1 orang. **Pengawas Senior TIDAK ditampilkan di dropdown "Pilih Pengawas"** form Produksi & FSBS (filter `jabatan = 'pengawas'` tetap, jangan sampai ikut).

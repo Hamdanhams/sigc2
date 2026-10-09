@@ -34,6 +34,7 @@ class UserPegawaiResource extends Resource
                 Forms\Components\Select::make('jabatan')
                     ->options([
                         'pengawas' => 'Pengawas',
+                        'pengawas_senior' => 'Pengawas Senior',
                         'work_unit_head' => 'Work Unit Head',
                     ])
                     ->default('pengawas')
@@ -73,7 +74,11 @@ class UserPegawaiResource extends Resource
                 Tables\Columns\TextColumn::make('nama')->searchable(),
                 Tables\Columns\TextColumn::make('npp')->label('NPP')->searchable(),
                 Tables\Columns\BadgeColumn::make('jabatan')
-                    ->formatStateUsing(fn($state) => $state === 'work_unit_head' ? 'Work Unit Head' : 'Pengawas'),
+                    ->formatStateUsing(fn($state) => match ($state) {
+                        'work_unit_head' => 'Work Unit Head',
+                        'pengawas_senior' => 'Pengawas Senior',
+                        default => 'Pengawas',
+                    }),
                 Tables\Columns\TextColumn::make('username')
                     ->label('Username')
                     ->placeholder('Belum diatur')

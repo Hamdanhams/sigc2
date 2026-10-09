@@ -5,6 +5,8 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PersonilResource\Pages;
 use App\Filament\Resources\PersonilResource\RelationManagers;
 use App\Models\Personil;
+use App\Services\CutiService;
+use Filament\Notifications\Notification;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -57,12 +59,42 @@ class PersonilResource extends Resource
                 Tables\Columns\TextColumn::make('id_personil'),
                 Tables\Columns\TextColumn::make('inisial'),
                 Tables\Columns\TextColumn::make('username'),
+                Tables\Columns\TextColumn::make('saldo_cuti')
+                    ->label('Saldo Cuti')
+                    ->suffix(' hari')
+                    ->sortable()
+                    ->color(fn($state) => $state < 0 ? 'danger' : null),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                // Saldo hanya diubah lewat sini agar setiap perubahan tercatat di riwayat.
+                Tables\Actions\Action::make('atur_saldo')
+                    ->label('Atur saldo cuti')
+                    ->icon('heroicon-o-calendar-days')
+                    ->fillForm(fn(Personil $record) => ['saldo_baru' => $record->saldo_cuti])
+                    ->form([
+                        Forms\Components\TextInput::make('saldo_baru')
+                            ->label('Saldo baru (hari)')
+                            ->numeric()
+                            ->integer()
+                            ->required(),
+                        Forms\Components\TextInput::make('catatan')
+                            ->label('Alasan / catatan')
+                            ->required()
+                            ->maxLength(255),
+                    ])
+                    ->action(function (Personil $record, array $data) {
+                        app(CutiService::class)->aturSaldo(
+                            $record,
+                            (int) $data['saldo_baru'],
+                            $data['catatan'],
+                            auth()->user()?->name
+                        );
+                        Notification::make()->title('Saldo cuti diperbarui')->success()->send();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

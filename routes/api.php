@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\FsbsApprovalController;
 use App\Http\Controllers\Api\MyFsbsController;
 use App\Http\Controllers\Api\RekonsiliasiController;
 use App\Http\Controllers\Api\SafetyMeetingController;
+use App\Http\Controllers\Api\CutiController;
+use App\Http\Controllers\Api\CutiApprovalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PermintaanController;
@@ -49,6 +51,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rekonsiliasi (BM vs Real per minggu)
     Route::get('/rekonsiliasi', [RekonsiliasiController::class, 'index']);
+
+    // Cuti: pengajuan (Personil) dan approval (Pengawas Senior -> Work Unit Head)
+    Route::get('/cuti', [CutiController::class, 'index']);
+    Route::get('/cuti/hitung', [CutiController::class, 'hitung']);
+    Route::post('/cuti', [CutiController::class, 'store']);
+    Route::get('/cuti/{id}', [CutiController::class, 'show']);
+    Route::get('/approval/cuti', [CutiApprovalController::class, 'index']);
+    Route::patch('/approval/cuti/{id}/approve', [CutiApprovalController::class, 'approve']);
+    Route::patch('/approval/cuti/{id}/reject', [CutiApprovalController::class, 'reject']);
 
     // Arsip Safety Meeting (hanya User Pegawai; tanpa endpoint hapus/edit keterangan)
     Route::get('/safety-meeting', [SafetyMeetingController::class, 'index']);

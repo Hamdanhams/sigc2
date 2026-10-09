@@ -13,6 +13,7 @@ class Personil extends Model
         'nama',
         'id_personil',
         'inisial',
+        'saldo_cuti',
         'ttd',
         'username',
         'password',
