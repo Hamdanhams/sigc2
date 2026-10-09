@@ -131,7 +131,7 @@ Lihat rekap lengkap di riwayat chat — semua modul ini SELESAI dan berfungsi. F
 - **A (Approval 2 Lapis, Fase 1–5): SELESAI & live di VPS.**
 - **B (Rekonsiliasi): SELESAI & live di VPS.** Total ORE kadar = rata-rata TERTIMBANG BCM (sudah dikonfirmasi user). Form admin input per MINGGU (header sekali + blok HGSO/LGSO/Waste), logika di `RekonsiliasiService`.
 - **Safety Meeting (versi 1): SELESAI di Flutter** — foto + panel keterangan (logo Antam di `assets/images/antam_logo.png`), simpan ke galeri, menu HANYA di beranda Pengawas/WUH. Tanpa server.
-- **C (Cuti), D (Arsip Safety Meeting), E (Redesign tampilan menu): SUDAH DIRENCANAKAN, BELUM DIKERJAKAN** — tunggu perintah user. Lihat bagian C, D, E di bawah.
+- **D (Arsip Safety Meeting): SUDAH DIKODING** (backend commit `d834dd2`, Flutter di repo mobile) — perlu `migrate` di VPS + build APK. **C (Cuti) dan E (Redesign menu): SUDAH DIRENCANAKAN, BELUM DIKERJAKAN** — tunggu perintah user. Lihat bagian C, D, E di bawah.
 - Repo Flutter: `github.com/Hamdanhams/sigc2_mobile` (branch `main`).
 
 Catatan implementasi A yang tidak jelas dari kode:
@@ -214,7 +214,7 @@ Begitu 3 dropdown terisi → tampilkan **grafik histogram** (2 batang: nilai BM 
 
 **Urutan:** (1) backend + Filament, (2) Flutter Personil lalu approval, (3) ekspor PDF setelah format user siap.
 
-### D. Arsip Safety Meeting (DIRENCANAKAN — BELUM DIKERJAKAN, tunggu perintah user)
+### D. Arsip Safety Meeting (SELESAI DIKODING 9 Okt 2026 — belum dites di device; backend belum di-deploy ke VPS saat ini ditulis)
 
 Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ingin dokumentasi bisa DILIHAT semua Pengawas & WUH, jadi foto dikirim ke server.
 
