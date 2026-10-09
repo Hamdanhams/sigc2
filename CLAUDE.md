@@ -131,7 +131,7 @@ Lihat rekap lengkap di riwayat chat — semua modul ini SELESAI dan berfungsi. F
 - **A (Approval 2 Lapis, Fase 1–5): SELESAI & live di VPS.**
 - **B (Rekonsiliasi): SELESAI & live di VPS.** Total ORE kadar = rata-rata TERTIMBANG BCM (sudah dikonfirmasi user). Form admin input per MINGGU (header sekali + blok HGSO/LGSO/Waste), logika di `RekonsiliasiService`.
 - **Safety Meeting (versi 1): SELESAI di Flutter** — foto + panel keterangan (logo Antam di `assets/images/antam_logo.png`), simpan ke galeri, menu HANYA di beranda Pengawas/WUH. Tanpa server.
-- **C (Cuti) dan D (Arsip Safety Meeting): SUDAH DIRENCANAKAN, BELUM DIKERJAKAN** — tunggu perintah user. Lihat bagian C & D di bawah.
+- **C (Cuti), D (Arsip Safety Meeting), E (Redesign tampilan menu): SUDAH DIRENCANAKAN, BELUM DIKERJAKAN** — tunggu perintah user. Lihat bagian C, D, E di bawah.
 - Repo Flutter: `github.com/Hamdanhams/sigc2_mobile` (branch `main`).
 
 Catatan implementasi A yang tidak jelas dari kode:
@@ -227,6 +227,21 @@ Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ing
 - Filament: menu Safety Meeting (daftar, filter tanggal & lokasi, lihat foto, edit keterangan, hapus).
 
 **Rancangan:** tabel `safety_meetings` (user_pegawai_id pembuat, waktu, lokasi, anggota [id+nama], pembahasan, foto URL); endpoint `POST/GET (daftar+detail)/PUT (ganti foto saja)` di dalam group `auth:sanctum`, dijaga hanya User Pegawai (pembuat saja untuk PUT). Flutter: menu Safety Meeting dibagi "Buat Baru" dan "Arsip"; tombol "Ganti Foto" hanya untuk pembuat.
+
+### E. Redesign Tampilan Menu Aplikasi (DIRENCANAKAN — BELUM DIKERJAKAN, tunggu perintah user)
+
+**Latar:** menu makin banyak (Personil: 8, Pengawas/WUH: 7, dan akan bertambah Cuti, Approval Cuti, Arsip Safety Meeting). Grid 2 kolom polos di beranda sudah tidak skalabel. User minta tampilan lebih profesional, "seperti aplikasi-aplikasi ternama". Dikerjakan SETELAH/BERSAMA fitur baru supaya menu final langsung masuk desain baru (disarankan: kerjakan SETELAH Cuti & Arsip Safety Meeting).
+
+**Arah rancangan (usulan Claude, detail final menunggu keputusan user):**
+- **Menu dikelompokkan per kategori** dengan judul seksi, bukan satu grid datar. Usulan Personil: *Laporan Lapangan* (Produksi, Riwayat, Plot FSBS) · *Peta & Data* (Peta, Persebaran FSBS, Rekonsiliasi) · *Layanan* (Permintaan, Cuti). Usulan Pengawas/Senior/WUH: *Perlu Tindakan* (Approval Laporan, Approval FSBS, Approval Cuti — dengan angka) · *Peta & Data* · *Dokumentasi* (Safety Meeting: Buat Baru, Arsip).
+- **Navigasi bawah (bottom navigation)**: Beranda · Menu · Akun (opsional: Aktivitas/Notifikasi). Tombol Keluar dan info akun pindah ke tab Akun (bukan di header).
+- **Beranda lebih ringkas**: header + kartu "Perlu Tindakan" (laporan ditolak / menunggu approval) + akses cepat untuk 3–4 menu paling sering; daftar lengkap ada di tab Menu (grid ikon per kategori + kolom cari).
+- **Sinkronisasi** jadi status bar/banner ("N data belum sinkron" + tombol Sinkronkan), bukan kartu menu.
+- **Design system konsisten**: satu set warna/ikon/ukuran kartu/spasi/tipografi (tema terpusat di `ThemeData`), ikon seragam dalam tile berwarna lembut, badge angka seragam, skeleton/loading yang halus, transisi halus, state kosong yang ramah.
+- **Refactor**: beranda Personil (`home_screen.dart`) dan Pengawas/WUH (`pengawas_home_screen.dart`) saat ini duplikat. Jadikan SATU shell dengan konfigurasi menu per peran (data-driven), supaya menambah menu cukup menambah 1 entri.
+- **Aturan yang harus tetap**: hak akses menu per peran tidak berubah (Cuti: Personil + Pengawas Senior + WUH; Safety Meeting: hanya User Pegawai; Pengawas biasa tidak melihat Cuti). Offline support tidak boleh rusak (menu tetap jalan tanpa sinyal; angka badge dipertahankan saat offline).
+
+**Keputusan yang masih terbuka (tanya user sebelum mengerjakan):** pakai bottom navigation atau tetap satu beranda? perlu halaman notifikasi/aktivitas? perlu mode gelap? preferensi gaya (lebih "korporat" biru-emas seperti sekarang, atau lebih berwarna)? Logo/nama aplikasi final belum diputuskan (lihat bagian 8) — jangan hardcode nama baru.
 
 ---
 
