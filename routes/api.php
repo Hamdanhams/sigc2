@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\FsbsApprovalController;
 use App\Http\Controllers\Api\MyFsbsController;
 use App\Http\Controllers\Api\RekonsiliasiController;
+use App\Http\Controllers\Api\SafetyMeetingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PermintaanController;
@@ -48,6 +49,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rekonsiliasi (BM vs Real per minggu)
     Route::get('/rekonsiliasi', [RekonsiliasiController::class, 'index']);
+
+    // Arsip Safety Meeting (hanya User Pegawai; tanpa endpoint hapus/edit keterangan)
+    Route::get('/safety-meeting', [SafetyMeetingController::class, 'index']);
+    Route::post('/safety-meeting', [SafetyMeetingController::class, 'store']);
+    Route::get('/safety-meeting/{id}', [SafetyMeetingController::class, 'show']);
+    Route::put('/safety-meeting/{id}/foto', [SafetyMeetingController::class, 'updateFoto']);
 
     // Peta Layer
     Route::get('/peta',[PetaLayerController::class, 'index']);
