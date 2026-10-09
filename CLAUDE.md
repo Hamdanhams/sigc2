@@ -127,13 +127,18 @@ Lihat rekap lengkap di riwayat chat — semua modul ini SELESAI dan berfungsi. F
 
 ## 7. PEKERJAAN BESAR
 
-**STATUS (3 Okt 2026):** Bagian **A (Approval 2 Lapis, Fase 1–5) SUDAH DIKODING** — belum dites end-to-end di device. Fase 1 live di VPS; Fase 3 & backend Fase 5 baru commit lokal (belum push/pull VPS). Bagian B (Rekonsiliasi) belum dimulai.
+**STATUS (9 Okt 2026):**
+- **A (Approval 2 Lapis, Fase 1–5): SELESAI & live di VPS.**
+- **B (Rekonsiliasi): SELESAI & live di VPS.** Total ORE kadar = rata-rata TERTIMBANG BCM (sudah dikonfirmasi user). Form admin input per MINGGU (header sekali + blok HGSO/LGSO/Waste), logika di `RekonsiliasiService`.
+- **Safety Meeting (versi 1): SELESAI di Flutter** — foto + panel keterangan (logo Antam di `assets/images/antam_logo.png`), simpan ke galeri, menu HANYA di beranda Pengawas/WUH. Tanpa server.
+- **C (Cuti) dan D (Arsip Safety Meeting): SUDAH DIRENCANAKAN, BELUM DIKERJAKAN** — tunggu perintah user. Lihat bagian C & D di bawah.
+- Repo Flutter: `github.com/Hamdanhams/sigc2_mobile` (branch `main`).
 
 Catatan implementasi A yang tidak jelas dari kode:
 - Status laporan: `menunggu` → `menunggu_wuh` → `disetujui`; `ditolak` = menunggu revisi (+ `catatan_penolakan`, `ditolak_oleh_jabatan`). Revisi mereset ke `menunggu`.
 - FSBS: grup = Front + tanggal `created_at` dalam WITA (UTC+8) + status. Data FSBS lama & kiriman tanpa `user_pegawai_id` (APK lama) otomatis `disetujui`. Revisi FSBS = update di tempat (`PUT /my-fsbs/revisi`), `created_at` tidak berubah.
 - Work Unit Head memakai `PengawasHomeScreen` yang sama (label & status pending mengikuti `AuthService.getPendingStatus()`).
-- `sigc2_mobile` BUKAN repo git (tidak ada commit untuk sisi Flutter).
+- `sigc2_mobile` sekarang repo git sendiri (remote `github.com/Hamdanhams/sigc2_mobile`).
 
 Requirement awal & urutan pengerjaan yang disepakati:
 
@@ -187,9 +192,41 @@ Form input biasa di Filament, tidak ada kerumitan khusus di sisi admin.
 
 Begitu 3 dropdown terisi → tampilkan **grafik histogram** (2 batang: nilai BM vs nilai Real) untuk kombinasi Jenis+Parameter+Periode itu.
 
-**B3. Perhitungan "Total ORE" — BELUM FINAL, perlu konfirmasi user**
-- Untuk Jenis **BCM**: dijumlahkan biasa (HGSO BCM + LGSO BCM) — ini SUDAH DISEPAKATI
-- Untuk Jenis **Ni/Fe/SiO2/MgO** (kadar, bukan volume): user masih menunggu konfirmasi dari atasannya. Opsi yang diajukan Claude: rata-rata TERTIMBANG berdasarkan BCM (bukan rata-rata biasa), karena rata-rata biasa secara teknis salah untuk menggabungkan kadar dari 2 sumber dengan volume berbeda. **JANGAN ASUMSIKAN rata-rata biasa — tanya user dulu kalau field ini belum dikerjakan, cek riwayat chat untuk jawaban terbaru kalau ada.**
+**B3. Perhitungan "Total ORE" — FINAL (SELESAI)**
+- **BCM**: dijumlahkan (HGSO + LGSO).
+- **Ni/Fe/SiO2/MgO** (kadar): rata-rata TERTIMBANG BCM (BCM dari sisi yang sama: BM dengan BCM BM, Real dengan BCM Real). Bukan rata-rata biasa.
+
+### C. Pengajuan Cuti (DIRENCANAKAN — BELUM DIKERJAKAN, tunggu perintah user)
+
+**Keputusan user (sudah final):**
+- Role baru: `pengawas_senior` ditambah ke enum `jabatan` di `user_pegawais` (kini: pengawas, work_unit_head). Hanya 1 orang. **Pengawas Senior TIDAK ditampilkan di dropdown "Pilih Pengawas"** form Produksi & FSBS (filter `jabatan = 'pengawas'` tetap, jangan sampai ikut).
+- Saldo cuti = kolom baru di tabel `personils`, diisi MANUAL oleh admin di Filament (+ tabel riwayat perubahan saldo: siapa, kapan, alasan).
+- Alur approval: **Pengawas Senior → WUH**. Dicek di server saat pengajuan dibuat: ada User Pegawai AKTIF berjabatan `pengawas_senior` → status awal `menunggu`; kalau tidak ada → langsung `menunggu_wuh`. Status: `menunggu` → `menunggu_wuh` → `disetujui` | `ditolak` (+ `catatan_penolakan`, `ditolak_oleh_jabatan`).
+- Ditolak = final, alasan wajib, TIDAK ada edit; Personil bikin pengajuan BARU. Tidak ada jenis cuti (semua memotong saldo). **Saldo dipotong saat DISETUJUI WUH.**
+- Hitung hari = hari kerja: Sabtu, Minggu, dan Hari Libur Nasional TIDAK dihitung. Hari libur disimpan di tabel yang diinput admin di Filament (bukan API luar; admin isi per tahun, termasuk cuti bersama).
+- **Saldo boleh minus sampai −6.** Pengajuan ditolak sistem kalau `saldo − hari_menunggu − hari_diajukan < −6` (jatuh tepat di −6 masih boleh). Pengajuan yang masih menunggu ikut dihitung; cek ulang saat approval akhir WUH.
+- Pengajuan harus ONLINE (tidak ada antrean offline untuk cuti).
+- Admin panel (Filament): daftar pengajuan, ubah saldo + riwayat, daftar hari libur, dan **ekspor PDF untuk pengajuan yang sudah disetujui WUH** — **FORMAT PDF MENUNGGU DARI USER** (pola PDF sudah ada: `ProduksiPdfService`/`FsbsPdfService`).
+
+**Aturan turunan (usulan Claude, disetujui user kecuali yang dikoreksi di atas):** jumlah hari 0 ditolak; tanggal tidak boleh beririsan dengan pengajuan sendiri yang menunggu/disetujui; tanggal lampau tidak boleh diajukan; kalau Pengawas Senior dihapus/nonaktif saat ada pengajuan `menunggu`, WUH boleh memprosesnya; admin menghapus pengajuan yang sudah disetujui → saldo otomatis dikembalikan + dicatat di riwayat; Personil tidak bisa membatalkan (batal lewat admin).
+
+**Flutter:** Personil: menu "Cuti" (saldo, formulir, riwayat status, badge ditolak, notifikasi polling). Pengawas Senior & WUH: layar approval cuti di beranda yang sama (`PengawasHomeScreen`). Pengawas biasa TIDAK melihat cuti. Logika di Service class (`app/Services/`), bukan di form Filament.
+
+**Urutan:** (1) backend + Filament, (2) Flutter Personil lalu approval, (3) ekspor PDF setelah format user siap.
+
+### D. Arsip Safety Meeting (DIRENCANAKAN — BELUM DIKERJAKAN, tunggu perintah user)
+
+Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ingin dokumentasi bisa DILIHAT semua Pengawas & WUH, jadi foto dikirim ke server.
+
+**Keputusan user (final):**
+- Semua Pengawas & WUH bisa melihat SEMUA dokumentasi. Personil tidak punya akses.
+- Pembuat: hanya bisa **mengganti foto**. TIDAK ada edit keterangan dan TIDAK ada hapus di app. Edit keterangan (lokasi, anggota, pembahasan) dan hapus data → HANYA di panel admin Filament. Jangan buat endpoint `DELETE` di API.
+- Keterangan yang diedit admin TIDAK mengubah teks di dalam gambar (panel menyatu di foto = catatan asli saat kejadian); layar arsip menampilkan teks terbaru dari database di samping foto. Saat pembuat mengganti foto, panel foto baru dibuat dari keterangan di database saat itu.
+- Antrean offline: foto + data disimpan di HP dengan status "belum terkirim", terkirim otomatis/lewat tombol sinkronisasi yang sudah ada saat ada sinyal (pola sama dengan FSBS/Produksi).
+- Cloudinary hanya **JPEG** (kualitas ± 85), bukan PNG. Salinan galeri HP juga disamakan jadi JPEG.
+- Filament: menu Safety Meeting (daftar, filter tanggal & lokasi, lihat foto, edit keterangan, hapus).
+
+**Rancangan:** tabel `safety_meetings` (user_pegawai_id pembuat, waktu, lokasi, anggota [id+nama], pembahasan, foto URL); endpoint `POST/GET (daftar+detail)/PUT (ganti foto saja)` di dalam group `auth:sanctum`, dijaga hanya User Pegawai (pembuat saja untuk PUT). Flutter: menu Safety Meeting dibagi "Buat Baru" dan "Arsip"; tombol "Ganti Foto" hanya untuk pembuat.
 
 ---
 
