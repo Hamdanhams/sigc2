@@ -241,6 +241,10 @@ Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ing
 - **Refactor**: beranda Personil (`home_screen.dart`) dan Pengawas/WUH (`pengawas_home_screen.dart`) saat ini duplikat. Jadikan SATU shell dengan konfigurasi menu per peran (data-driven), supaya menambah menu cukup menambah 1 entri.
 - **Aturan yang harus tetap**: hak akses menu per peran tidak berubah (Cuti: Personil + Pengawas Senior + WUH; Safety Meeting: hanya User Pegawai; Pengawas biasa tidak melihat Cuti). Offline support tidak boleh rusak (menu tetap jalan tanpa sinyal; angka badge dipertahankan saat offline).
 
+**Usulan Claude yang sudah diajukan ke user (10 Okt 2026):** bottom navigation 3 tab (Beranda | Menu | Akun); Beranda = header + kartu "Perlu Tindakan" (laporan ditolak, belum sinkron, approval menunggu) + Akses Cepat; tab Menu = semua fitur dikelompokkan + kolom cari; tab Akun = nama, jabatan, versi app, **Ganti Password**, Keluar.
+
+**Permintaan user: tab Akun harus punya fitur GANTI PASSWORD** (untuk Personil dan User Pegawai). Rancangan: endpoint baru di dalam group `auth:sanctum` (mis. `PUT /akun/password`, field `password_lama`, `password_baru`, `konfirmasi`), berlaku untuk model `Personil` MAUPUN `UserPegawai` (keduanya tidak meng-cast password sebagai hashed → pakai `Hash::check` dan `Hash::make`/bcrypt manual seperti form Filament); wajib verifikasi password lama; minimal 6 karakter (usulan, konfirmasi user); password baru tidak boleh sama dengan yang lama; setelah berhasil, token LAIN milik akun itu dihapus tapi token sesi saat ini dipertahankan. Tidak ada fitur "lupa password" — reset lewat admin Filament (kolom password di form Personil/User Pegawai). Logika di Service class (bukan di controller/Filament).
+
 **Keputusan yang masih terbuka (tanya user sebelum mengerjakan):** pakai bottom navigation atau tetap satu beranda? perlu halaman notifikasi/aktivitas? perlu mode gelap? preferensi gaya (lebih "korporat" biru-emas seperti sekarang, atau lebih berwarna)? Logo/nama aplikasi final belum diputuskan (lihat bagian 8) — jangan hardcode nama baru.
 
 ---
