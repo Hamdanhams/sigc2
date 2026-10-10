@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\FsbsApprovalController;
 use App\Http\Controllers\Api\MyFsbsController;
 use App\Http\Controllers\Api\RekonsiliasiController;
 use App\Http\Controllers\Api\SafetyMeetingController;
+use App\Http\Controllers\Api\AkunController;
 use App\Http\Controllers\Api\CutiController;
 use App\Http\Controllers\Api\CutiApprovalController;
 use Illuminate\Http\Request;
@@ -51,6 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rekonsiliasi (BM vs Real per minggu)
     Route::get('/rekonsiliasi', [RekonsiliasiController::class, 'index']);
+
+    // Akun: ganti password sendiri (Personil & User Pegawai). Dibatasi agar password lama tidak bisa ditebak berulang.
+    Route::put('/akun/password', [AkunController::class, 'gantiPassword'])->middleware('throttle:akun-password');
 
     // Cuti: pengajuan (Personil) dan approval (Pengawas Senior -> Work Unit Head)
     Route::get('/cuti', [CutiController::class, 'index']);
