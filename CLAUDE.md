@@ -131,7 +131,7 @@ Lihat rekap lengkap di riwayat chat — semua modul ini SELESAI dan berfungsi. F
 - **A (Approval 2 Lapis, Fase 1–5): SELESAI & live di VPS.**
 - **B (Rekonsiliasi): SELESAI & live di VPS.** Total ORE kadar = rata-rata TERTIMBANG BCM (sudah dikonfirmasi user). Form admin input per MINGGU (header sekali + blok HGSO/LGSO/Waste), logika di `RekonsiliasiService`.
 - **Safety Meeting (versi 1): SELESAI di Flutter** — foto + panel keterangan (logo Antam di `assets/images/antam_logo.png`), simpan ke galeri, menu HANYA di beranda Pengawas/WUH. Tanpa server.
-- **D (Arsip Safety Meeting): SUDAH DIKODING** (backend commit `d834dd2`, Flutter di repo mobile) — perlu `migrate` di VPS + build APK. **C (Cuti): backend + Filament SELESAI (logika di `CutiService`; endpoint `/cuti`, `/cuti/hitung`, `/approval/cuti`), Flutter SELESAI (menu Cuti Personil, Approval Cuti Pengawas Senior/WUH, polling notifikasi), ekspor PDF menunggu format user.** **E (Redesign menu): DIRENCANAKAN, BELUM DIKERJAKAN.** Lihat bagian C, D, E di bawah.
+- **D (Arsip Safety Meeting): SUDAH DIKODING** (backend commit `d834dd2`, Flutter di repo mobile) — perlu `migrate` di VPS + build APK. **C (Cuti): backend + Filament SELESAI (logika di `CutiService`; endpoint `/cuti`, `/cuti/hitung`, `/approval/cuti`), Flutter SELESAI (menu Cuti Personil, Approval Cuti Pengawas Senior/WUH, polling notifikasi), ekspor PDF menunggu format user.** **E (Redesign menu + Ganti Password): SELESAI DIKODING** — Flutter: `lib/screens/app_shell.dart` (3 tab), `lib/app/home_controller.dart`, `lib/app/menu_config.dart` (TAMBAH MENU = tambah 1 entri di `daftarMenu`), `lib/theme/app_theme.dart`; beranda lama `home_screen`/`pengawas_home_screen` sudah dihapus. Backend: `PUT /akun/password` (`AkunService`, tanpa batas minimum, limiter `akun-password`).** Lihat bagian C, D, E di bawah.
 - Repo Flutter: `github.com/Hamdanhams/sigc2_mobile` (branch `main`).
 
 Catatan implementasi A yang tidak jelas dari kode:
@@ -228,7 +228,7 @@ Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ing
 
 **Rancangan:** tabel `safety_meetings` (user_pegawai_id pembuat, waktu, lokasi, anggota [id+nama], pembahasan, foto URL); endpoint `POST/GET (daftar+detail)/PUT (ganti foto saja)` di dalam group `auth:sanctum`, dijaga hanya User Pegawai (pembuat saja untuk PUT). Flutter: menu Safety Meeting dibagi "Buat Baru" dan "Arsip"; tombol "Ganti Foto" hanya untuk pembuat.
 
-### E. Redesign Tampilan Menu Aplikasi (DIRENCANAKAN — BELUM DIKERJAKAN, tunggu perintah user)
+### E. Redesign Tampilan Menu Aplikasi (SELESAI DIKODING 10 Okt 2026, belum dites di device)
 
 **Latar:** menu makin banyak (Personil: 8, Pengawas/WUH: 7, dan akan bertambah Cuti, Approval Cuti, Arsip Safety Meeting). Grid 2 kolom polos di beranda sudah tidak skalabel. User minta tampilan lebih profesional, "seperti aplikasi-aplikasi ternama". Dikerjakan SETELAH/BERSAMA fitur baru supaya menu final langsung masuk desain baru (disarankan: kerjakan SETELAH Cuti & Arsip Safety Meeting).
 
