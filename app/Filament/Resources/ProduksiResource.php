@@ -203,11 +203,11 @@ class ProduksiResource extends Resource
                         return $query
                             ->when(
                                 $data['dari_tanggal'],
-                                fn($query, $date) => $query->whereDate('tanggal', '>=', $date),
+                                fn($query, $date) => $query->where('tanggal', '>=', $date),
                             )
                             ->when(
                                 $data['sampai_tanggal'],
-                                fn($query, $date) => $query->whereDate('tanggal', '<=', $date),
+                                fn($query, $date) => $query->where('tanggal', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {

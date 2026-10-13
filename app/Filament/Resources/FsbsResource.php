@@ -96,7 +96,8 @@ class FsbsResource extends Resource
                     ->label('Tanggal')
                     ->date('d/m/Y')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('kode_sampel')->searchable(),
+                Tables\Columns\TextColumn::make('kode_sampel')
+                    ->searchable(query: fn(\Illuminate\Database\Eloquent\Builder $query, string $search): \Illuminate\Database\Eloquent\Builder => $query->where('kode_sampel', 'like', "{$search}%")),
                 Tables\Columns\TextColumn::make('front'),
                 Tables\Columns\TextColumn::make('titik_produksi'),
                 Tables\Columns\TextColumn::make('elevasi'),
@@ -113,9 +114,12 @@ class FsbsResource extends Resource
                             ->label('Tanggal'),
                     ])
                     ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data) {
+                        // Rentang waktu (bukan whereDate) supaya index created_at terpakai
                         return $query->when(
                             $data['tanggal'],
-                            fn($query, $date) => $query->whereDate('created_at', '=', $date),
+                            fn($query, $date) => $query
+                                ->where('created_at', '>=', \Carbon\Carbon::parse($date)->startOfDay())
+                                ->where('created_at', '<=', \Carbon\Carbon::parse($date)->endOfDay()),
                         );
                     })
                     ->indicateUsing(function (array $data): array {

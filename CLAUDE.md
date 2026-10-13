@@ -251,6 +251,10 @@ Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ing
 
 ## 8. PEKERJAAN LAIN YANG MASIH TERTUNDA (prioritas lebih rendah dari bagian 7)
 
+- **Redesign layar login ala Livin' Mandiri (RENCANA DISEPAKATI 12 Okt 2026, BELUM DIKODING).** Layar awal = carousel foto penuh layar (geser manual + otomatis ganti tiap 4–5 detik, indikator titik, logo LACAK di atas, gradasi gelap di bawah, judul+keterangan per slide). Di bawah ada 2 tombol: **Login Personil** dan **Login Pengawas / WUH**; tombol ditekan → bottom sheet form (Username, Password, MASUK, error & loading di dalam sheet). `AuthService`/`loginPengawas`/`AuthGateScreen` tidak berubah.
+  - **Foto & keterangan diambil dari backend** (diatur admin di Filament): tabel `login_slides` (`gambar` URL Cloudinary, `judul`, `keterangan`, `urutan`, `aktif`); menu Filament "Slide Login" (tambah/ganti/urut/aktif-nonaktif); foto diganti/dihapus → `CloudinaryCleanupService`. Endpoint **PUBLIK** `GET /login-slides` (di luar group `auth:sanctum`, bersama `/login`; pakai pembatas laju). Transformasi Cloudinary untuk kompres/resize (portrait ± 1080×1920).
+  - Flutter: cache daftar slide + foto di HP (pola cache Master Data), fallback ke cache saat offline, plus 1 gambar default di dalam APK (dipakai saat pertama buka tanpa internet / belum ada slide aktif). Perubahan di admin muncul di pembukaan app berikutnya.
+
 - **Nama aplikasi final** — belum diputuskan. Brainstorming sempat dilakukan (kandidat: Kadar, Sigap, Gencar, dll), user masih mencari yang "klik".
 - **Logo & Splash Screen animasi** — belum dikerjakan sama sekali, menunggu nama final.
 - **Persiapan Play Store**:
