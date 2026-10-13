@@ -134,52 +134,16 @@ class FsbsResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
 
-                    Tables\Actions\BulkAction::make('exportCsv')
-                        ->label('Export CSV')
-                        ->icon('heroicon-o-document-text')
+                    Tables\Actions\BulkAction::make('exportExcel')
+                        ->label('Export Excel')
+                        ->icon('heroicon-o-table-cells')
                         ->action(function (Collection $records) {
-                            $filename = 'fsbs_export_' . now()->format('Ymd_His') . '.csv';
-                            $handle = fopen('php://temp', 'w+');
+                            $filename = 'fsbs_export_' . now()->format('Ymd_His') . '.xlsx';
 
-                            // BOM UTF-8, biar Excel baca karakter dengan benar
-                            fwrite($handle, "\xEF\xBB\xBF");
-
-                            fputcsv($handle, [
-                                'kode_sampel',
-                                'front',
-                                'titik_produksi',
-                                'elevasi',
-                                'koordinat_x',
-                                'koordinat_y',
-                                'ni_bm',
-                                'fe_bm',
-                            ], ';');
-
-                            $formatNumber = function ($value) {
-                                if ($value === null) return '';
-                                return str_replace('.', ',', (string) $value);
-                            };
-
-                            foreach ($records as $r) {
-                                fputcsv($handle, [
-                                    $r->kode_sampel,
-                                    $r->front,
-                                    $r->titik_produksi,
-                                    $r->elevasi,
-                                    $formatNumber($r->koordinat_x),
-                                    $formatNumber($r->koordinat_y),
-                                    $formatNumber($r->ni_bm),
-                                    $formatNumber($r->fe_bm),
-                                ], ';');
-                            }
-
-                            rewind($handle);
-                            $content = stream_get_contents($handle);
-                            fclose($handle);
-
-                            return response()->streamDownload(function () use ($content) {
-                                echo $content;
-                            }, $filename, ['Content-Type' => 'text/csv']);
+                            return \Maatwebsite\Excel\Facades\Excel::download(
+                                new \App\Exports\FsbsExport($records),
+                                $filename
+                            );
                         })
                         ->deselectRecordsAfterCompletion(),
 

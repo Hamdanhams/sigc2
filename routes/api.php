@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\MyFsbsController;
 use App\Http\Controllers\Api\RekonsiliasiController;
 use App\Http\Controllers\Api\SafetyMeetingController;
 use App\Http\Controllers\Api\AkunController;
+use App\Http\Controllers\Api\LoginSlideController;
 use App\Http\Controllers\Api\CutiController;
 use App\Http\Controllers\Api\CutiApprovalController;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Api\PermintaanController;
 // ================= PUBLIC (tanpa login) =================
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/login-pengawas', [AuthController::class, 'loginPengawas']);
+Route::get('/login-slides', [LoginSlideController::class, 'index'])->middleware('throttle:60,1');
 
 // ================= PROTECTED (wajib login) =================
 Route::middleware('auth:sanctum')->group(function () {
