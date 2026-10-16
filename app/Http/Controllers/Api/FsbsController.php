@@ -23,6 +23,8 @@ class FsbsController extends Controller
             'keterangan' => 'nullable|string',
             'increment' => 'nullable|string',
             'gridding' => 'nullable|string',
+            'client_uuid' => 'nullable|uuid',
+            'dibuat_pada' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -31,6 +33,14 @@ class FsbsController extends Controller
 
         $data = $validator->validated();
         $kodeSampel = strtoupper($data['kode_sampel']);
+
+        // Kiriman ulang dari draft yang sama (respons sebelumnya hilang): jangan buat data ganda.
+        if (!empty($data['client_uuid'])) {
+            $sudahAda = Fsbs::where('client_uuid', $data['client_uuid'])->first();
+            if ($sudahAda) {
+                return response()->json(['message' => 'Data FSBS sudah tersimpan', 'data' => $sudahAda], 201);
+            }
+        }
 
         $hasil = app(KodeSampelParserService::class)->parse($kodeSampel);
 
@@ -43,8 +53,9 @@ class FsbsController extends Controller
             );
         }
 
-        $fsbs = Fsbs::create([
+        $fsbs = new Fsbs([
             'kode_sampel' => $kodeSampel,
+            'client_uuid' => $data['client_uuid'] ?? null,
             'front' => $hasil['front'],
             'titik_produksi' => $hasil['titik_produksi'],
             'elevasi' => $hasil['elevasi'],
@@ -62,6 +73,17 @@ class FsbsController extends Controller
             'ni_bm' => $lookup['ni_bm'] ?? null,
             'fe_bm' => $lookup['fe_bm'] ?? null,
         ]);
+
+        // Tanggal data = waktu plot di HP (bukan waktu sinkron). created_at dipakai untuk
+        // pengelompokan approval per tanggal (WITA). Waktu yang tidak masuk akal diabaikan.
+        if (!empty($data['dibuat_pada'])) {
+            $waktuPlot = \Carbon\Carbon::parse($data['dibuat_pada']);
+            if ($waktuPlot->lte(now()->addMinutes(10)) && $waktuPlot->gte(now()->subDays(90))) {
+                $fsbs->created_at = $waktuPlot;
+            }
+        }
+
+        $fsbs->save();
 
         return response()->json([
             'message' => 'Data FSBS berhasil disimpan',

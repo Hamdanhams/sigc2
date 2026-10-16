@@ -10,6 +10,7 @@ class Fsbs extends Model
 
     protected $fillable = [
         'kode_sampel',
+        'client_uuid',
         'front',
         'titik_produksi',
         'elevasi',
