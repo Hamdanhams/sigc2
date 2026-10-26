@@ -30,6 +30,21 @@ class Fsbs extends Model
         'ditolak_oleh_jabatan',
     ];
 
+    /** Zona waktu lapangan. created_at disimpan UTC, tanggal kerja dihitung WITA. */
+    public const ZONA = 'Asia/Makassar';
+
+    /**
+     * Batasi ke data yang dibuat pada rentang tanggal (inklusif) menurut WITA.
+     * Memakai rentang waktu (bukan whereDate) supaya index created_at terpakai.
+     */
+    public function scopeTanggalWita($query, string $dari, ?string $sampai = null)
+    {
+        $awal = \Carbon\Carbon::parse($dari, self::ZONA)->startOfDay()->utc();
+        $akhir = \Carbon\Carbon::parse($sampai ?? $dari, self::ZONA)->endOfDay()->utc();
+
+        return $query->where('created_at', '>=', $awal)->where('created_at', '<=', $akhir);
+    }
+
     public function personil()
     {
         return $this->belongsTo(Personil::class);

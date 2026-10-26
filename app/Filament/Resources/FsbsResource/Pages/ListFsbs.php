@@ -70,8 +70,7 @@ class ListFsbs extends ListRecords
                 ])
                 ->action(function (array $data) {
                     $records = Fsbs::where('front', $data['front_inisial'])
-                        ->whereDate('created_at', '>=', $data['tanggal_mulai'])
-                        ->whereDate('created_at', '<=', $data['tanggal_selesai'])
+                        ->tanggalWita($data['tanggal_mulai'], $data['tanggal_selesai'])
                         ->whereNotNull('foto_material')
                         ->get();
 

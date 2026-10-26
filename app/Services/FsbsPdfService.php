@@ -31,7 +31,7 @@ class FsbsPdfService
             $sisi = [];
             foreach ($pasangan as $tanggal) {
                 $records = Fsbs::where('front', $frontInisial)
-                    ->whereDate('created_at', $tanggal)
+                    ->tanggalWita($tanggal)
                     ->with('personil')
                     ->orderBy('created_at')
                     ->get();

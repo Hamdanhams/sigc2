@@ -94,7 +94,7 @@ class FsbsResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal')
-                    ->date('d/m/Y')
+                    ->dateTime('d/m/Y H:i', 'Asia/Makassar')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('kode_sampel')
                     ->searchable(query: fn(\Illuminate\Database\Eloquent\Builder $query, string $search): \Illuminate\Database\Eloquent\Builder => $query->where('kode_sampel', 'like', "{$search}%")),
@@ -114,12 +114,10 @@ class FsbsResource extends Resource
                             ->label('Tanggal'),
                     ])
                     ->query(function (\Illuminate\Database\Eloquent\Builder $query, array $data) {
-                        // Rentang waktu (bukan whereDate) supaya index created_at terpakai
+                        // Tanggal menurut WITA (created_at disimpan UTC)
                         return $query->when(
                             $data['tanggal'],
-                            fn($query, $date) => $query
-                                ->where('created_at', '>=', \Carbon\Carbon::parse($date)->startOfDay())
-                                ->where('created_at', '<=', \Carbon\Carbon::parse($date)->endOfDay()),
+                            fn($query, $date) => $query->tanggalWita($date),
                         );
                     })
                     ->indicateUsing(function (array $data): array {
