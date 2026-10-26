@@ -14,9 +14,9 @@ Dokumen ini dibaca otomatis oleh Claude Code di setiap sesi. Berisi arsitektur, 
 
 **Repo:** `github.com/Hamdanhams/sigc2` (branch `main`). Dua folder terpisah: `sigc2` (Laravel) dan `sigc2_mobile` (Flutter).
 
-**Status deployment:** Backend sudah **live di VPS production** — domain `https://lacakgc.my.id`. Flutter sudah di-release (APK, distribusi manual, belum di Play Store). **Nama final aplikasi belum diputuskan** — masih memakai nama kerja "SIGC2"; brainstorming nama baru sempat dilakukan tapi belum final.
+**Status deployment (per 27 Okt 2026):** Backend **live di VPS production** — domain `https://lacakgc.my.id`, path `/var/www/lacakgc`, Ubuntu 26.04 (`resolute`), PHP 8.5 (paket Ubuntu `8.5.4-0ubuntu1.5`, sudah memuat tambalan CVE-2026-109618/109619), PHP-FPM, Laravel 13.32, `APP_ENV=production`, `APP_DEBUG=false`. Halaman `/` dialihkan ke `/admin`. Flutter sudah di-release (APK, distribusi manual, belum di Play Store), versi terakhir **1.1.0+3**. Semua fitur sudah dites user di HP dan berjalan normal. **Nama final aplikasi belum diputuskan secara resmi** — UI login kini memakai branding "LACAK — Layanan Area Control And Kualitas" (selaras domain `lacakgc`), `pubspec` & `MaterialApp.title` masih "SIGC2"; jangan hardcode nama baru sebelum user memutuskan.
 
-**Environment development:** Laragon (PHP 8.3, MySQL 8.4) di Windows, Laravel 13, Filament 3.x, Flutter 3.47.5.
+**Environment development:** Laragon (PHP 8.3.33, MySQL 8.4) di Windows, Laravel 13, Filament 3.3.x, Flutter 3.47.5. MySQL Laragon kadang mati sendiri (error `[2002] refused`) — nyalakan via Laragon atau `mysqld.exe --defaults-file=...\my.ini`. Heredoc di Bash tool sering gagal → pakai tool Write/Edit. Jangan jalankan `dart format` pada file lama (mis. `app_shell.dart`) — mengubah ratusan baris.
 
 ---
 
@@ -31,20 +31,21 @@ Dokumen ini dibaca otomatis oleh Claude Code di setiap sesi. Berisi arsitektur, 
 ### Master Data
 - **`fronts`** — `nama_front`, `inisial` (3 huruf), `lokasi`, `status`
 - **`personils`** — field worker, bisa login (`username`/`password`, Sanctum). `ttd` = file tanda tangan.
-- **`user_pegawais`** — Pengawas, bisa login (`username`/`password` nullable, Sanctum). `ttd` = file tanda tangan. **Field `jabatan` BELUM ADA — akan ditambahkan di fase berikutnya (lihat bagian 7).**
-- **`block_models`** — lookup Ni/Fe untuk Produksi & FSBS. `inisial_front` TEKS BEBAS (bukan FK, sengaja — data Excel sering tidak match sempurna). Import via `BlockModelImport` (queue, chunk 500). **PENTING:** `ShouldQueue` harus dari `Illuminate\Contracts\Queue\ShouldQueue`, bukan dari Maatwebsite Excel.
+- **`user_pegawais`** — Pengawas, bisa login (`username`/`password` nullable, Sanctum). `ttd` = file tanda tangan. `jabatan` enum: `pengawas`, `work_unit_head`, `pengawas_senior`.
+- **`block_models`** — lookup Ni/Fe untuk Produksi & FSBS. `inisial_front` TEKS BEBAS (bukan FK, sengaja — data Excel sering tidak match sempurna). Import via `BlockModelImport` (queue, chunk 500). **PENTING:** `ShouldQueue` harus dari `Illuminate\Contracts\Queue\ShouldQueue`, bukan dari Maatwebsite Excel. Import hanya MENAMBAH baris (tidak ada cek duplikat / opsi "ganti seluruh data" — user memutuskan TIDAK dibuat); import ulang file yang sama = data ganda. Elevasi minus di Block Model & kode sampel pakai format `M02` (bukan `-02`). Tabel ini sanggup ratusan ribu baris karena sudah ber-index (`inisial_front`,`titik_produksi`).
 
 ### Modul Produksi
 - **`produksis`** (header) — `tanggal`, `shift`, `jam_mulai/selesai`, `front_id`, `fleet`, `pic_1_id`, `pic_2_id`, `user_pegawai_id`, `dokumentasi_produksi`/`dokumentasi_kendala` (JSON array URL Cloudinary), `keterangan`, `rencana_produksi_besok`, `status_approval` (enum: menunggu/disetujui/ditolak — **akan direvisi jadi 2 lapis**), `catatan_penolakan`
 - **`detail_produksis`** — `titik_produksi`, `elevasi_atas`, `running_number` (manual, user isi bebas, tombol "Tambah Detail" auto-increment angka di akhir string), `tujuan_dumping`, `ni_bm`/`fe_bm` (hasil lookup), `ritase`, `gridding`
 
 ### Modul FSBS (flat, 1 kode_sampel = 1 koordinat)
-- **`fsbs`** — `kode_sampel`, `front`/`titik_produksi`/`elevasi`/`huruf_running` (hasil parsing), `koordinat_x`/`koordinat_y` (decimal 16,8 — WAJIB presisi ini untuk UTM), `personil_id`, `foto_material` (URL Cloudinary), `keterangan`, `increment`, `gridding`, `ni_bm`, `fe_bm`
+- **`fsbs`** — `kode_sampel`, `front`/`titik_produksi`/`elevasi`/`huruf_running` (hasil parsing), `koordinat_x`/`koordinat_y` (decimal 16,8 — WAJIB presisi ini untuk UTM), `personil_id`, `user_pegawai_id`, `status_approval`/`catatan_penolakan`/`ditolak_oleh_jabatan`, `foto_material` (URL Cloudinary), `keterangan`, `increment`, `gridding`, `ni_bm`, `fe_bm`, `client_uuid` (unik, nullable — ID draft di HP; kiriman ulang dengan UUID sama TIDAK membuat data ganda, server membalas 201 dengan data yang sudah ada)
+- **`created_at` = WAKTU PLOT di HP** (app mengirim `dibuat_pada` ISO UTC; server mengabaikan jika > 10 menit di masa depan atau > 90 hari lampau → pakai waktu sinkron). `created_at` disimpan **UTC**; tanggal kerja dihitung **WITA (UTC+8)**. Semua filter tanggal FSBS memakai scope `Fsbs::tanggalWita($dari, $sampai)` (rentang waktu, bukan `whereDate`) dan kolom Tanggal di Filament ditampilkan `dateTime(..., 'Asia/Makassar')`. Zona waktu app (`config/app.php`) SENGAJA tetap UTC agar data lama tidak bergeser.
 - Kolom kadar lab (`ni`,`co`,`fe`,`sio2`,`cao`,`mgo`,`cr2o3`,`al2o3`) dan `status` **SUDAH DIHAPUS** — data lab diproses di luar aplikasi. Fitur "Import Hasil Analisa" **sudah dihapus total**.
-- Export CSV/GPX/KML, Export PDF "Pengantar Sample" (F-270.503.001), Download Dokumentasi (ZIP foto per Front+tanggal)
+- Export **Excel (.xlsx, `App\Exports\FsbsExport`)** — menggantikan Export CSV (CSV sudah DIHAPUS), GPX/KML, Export PDF "Pengantar Sample" (F-270.503.001), Download Dokumentasi (ZIP foto per Front+tanggal WITA)
 
 ### Modul Sebaran FSBS (terpisah dari modul FSBS di atas)
-- **`sebaran_fsbs`** — `inisial_front` (teks bebas), `titik_produksi`, `elevasi`, `koordinat_x`/`koordinat_y`, `ni`, `fe`, `si_mg_ratio` (1 kolom rasio gabungan). Import Excel+queue. Tombol "Sisakan 2 Elevasi Terendah" (bulk cleanup — simpan SEMUA baris di 2 LEVEL elevasi terendah, bukan 2 baris literal).
+- **`sebaran_fsbs`** — `inisial_front` (teks bebas), `titik_produksi`, `elevasi`, `koordinat_x`/`koordinat_y`, `ni`, `fe`, `si_mg_ratio` (1 kolom rasio gabungan). Import Excel+queue (header yang dikenali: `inisial_front`/`front`, `titik_produksi`, `elevasi`, `x`/`koordinat_x`, `y`/`koordinat_y`, `ni`, `fe`, `s_m`/`sm`/`si_mg_ratio`). **Elevasi minus di tabel ini ditulis `-02`/`-2` (BUKAN `M02`)** karena tombol pembersihan memakai `CAST(elevasi AS DECIMAL)`. Tombol "Sisakan 2 Elevasi Terendah" (bulk cleanup — simpan SEMUA baris di 2 LEVEL elevasi terendah, bukan 2 baris literal).
 - **`peta_sebaran_layers`** — struktur identik `peta_layers`, tabel terpisah.
 
 ### Modul Peta
@@ -53,8 +54,8 @@ Dokumen ini dibaca otomatis oleh Claude Code di setiap sesi. Berisi arsitektur, 
 ### Modul Permintaan
 - **`permintaans`** — `personil_id`, `front_id`, `jenis_permintaan` (teks bebas), `gambar` (nullable), `keterangan`, `status` (enum: menunggu/diproses/selesai), `hasil_pdf`. Filament punya `getNavigationBadge()`.
 
-### Modul Approval Produksi (SAAT INI 1 lapis — akan direvisi jadi 2 lapis, lihat bagian 7)
-- Pengawas (User Pegawai) approve/reject laporan Produksi yang `user_pegawai_id`-nya dia
+### Modul Approval Produksi (2 lapis: Pengawas → Work Unit Head, SELESAI — lihat bagian 7A)
+- Pengawas (User Pegawai) approve/reject laporan Produksi yang `user_pegawai_id`-nya dia; lapis 2 oleh semua Work Unit Head
 - Endpoint: `GET /approval/produksi`, `PATCH /approval/produksi/{id}/approve`, `PATCH /approval/produksi/{id}/reject`
 - Revisi laporan ditolak: UPDATE laporan yang sama (bukan bikin baru) via `PUT /produksi/{id}`, reset `status_approval` jadi `menunggu`
 
@@ -77,11 +78,13 @@ Dokumen ini dibaca otomatis oleh Claude Code di setiap sesi. Berisi arsitektur, 
 **PENTING:** SEMUA endpoint protected HARUS dalam SATU group `auth:sanctum`. Pernah ada bug fatal — beberapa route ketambahan DI LUAR group (bisa diakses tanpa token). Selalu cek ulang struktur file ini sebelum menambah route baru.
 
 ```
-PUBLIC: POST /login, POST /login-pengawas
+PUBLIC: POST /login, POST /login-pengawas, GET /login-slides (throttle 60/menit; slide layar login)
 PROTECTED (auth:sanctum):
-  /logout, /me, /upload-foto
+  /logout, /me, /upload-foto, PUT /akun/password (limiter akun-password)
   /produksi (POST/GET/{id}GET/{id}PUT), /my-produksi
-  /fsbs (POST/GET)
+  /fsbs (POST/GET)  — POST menerima client_uuid + dibuat_pada
+  /my-fsbs, /approval/fsbs (grup Front+tanggal WITA), /rekonsiliasi
+  /safety-meeting (POST/GET/PUT ganti foto saja; TIDAK ada DELETE), /cuti, /cuti/hitung, /approval/cuti
   /peta, /peta/{id}/download
   /master/fronts, /master/personils, /master/user-pegawais
   /sebaran-fsbs/{front}, /peta-sebaran, /peta-sebaran/{id}/download
@@ -94,11 +97,12 @@ PROTECTED (auth:sanctum):
 ## 6. FLUTTER APP (`sigc2_mobile`) — STRUKTUR SAAT INI
 
 ### Role & Login
-- `AuthService` — `enum UserRole { personil, pengawas }`. Method `login()` (Personil) dan `loginPengawas()` (User Pegawai). `LoginScreen` ada toggle Personil/Pengawas.
+- `AuthService` — `enum UserRole { personil, pengawas, pengawasSenior, workUnitHead }`. Method `login()` (Personil) dan `loginPengawas()` (User Pegawai).
+- **`LoginScreen` (redesign 13 Okt 2026, ala Livin')**: carousel foto penuh layar dari backend (`GET /login-slides`, dikelola admin di menu Filament "Slide Login", foto di Cloudinary), 2 tombol **Login Personil** / **Login Pengawas / WUH** → form login muncul sebagai bottom sheet. Slide + foto di-cache di HP (`LoginSlideService`, refresh maks tiap 30 menit); tanpa slide → latar gradasi biru bawaan.
 - **`AuthGateScreen`** — layar perantara di `main.dart`, cek token tersimpan sebelum arahkan ke Login/Home (auto-login, tidak perlu login ulang tiap buka app).
 
 ### Offline Support (SELESAI, prioritas utama project ini)
-- **Master Data, Peta list, Sebaran FSBS data** — semua pakai pola cache: fetch online → simpan `shared_preferences` → kalau gagal/offline, fallback ke cache terakhir (timeout 8 detik per request)
+- **Master Data, Peta list, Sebaran FSBS data** — semua pakai pola cache: fetch online → simpan `shared_preferences` → kalau gagal/offline, fallback ke cache terakhir (timeout 8 detik per request). **Daftar Front & daftar Peta kini CACHE-FIRST**: tampil seketika dari cache, lalu diperbarui di latar belakang (peta baru dari admin muncul pada pembukaan berikutnya). **Semua request HTTP punya batas waktu** lewat `TimeoutClient` (`lib/services/timeout_client.dart`, dipasang di `main.dart` dengan `http.runWithClient`: 20 dtk biasa, 90 dtk unggah) — mencegah "loading terus" di sinyal lemah
 - **Background peta offline — SOLVED.** JANGAN PAKAI tile server HTTP lokal (`shelf`/`TileServer`, sudah tidak dipakai lagi, boleh dihapus). MapLibre Native punya `NetworkStatus` check yang BLOK semua request HTTP (termasuk ke `127.0.0.1`!) saat device offline — tidak bisa diakali dari Dart. **Solusi final:** pakai skema `file://` langsung di tiles array (`'file://$tilesDir/{z}/{x}/{y}.png'`), bypass network stack sepenuhnya karena ini baca file lokal, bukan request jaringan.
 - **JANGAN PERNAH coba modifikasi `MainActivity.kt` untuk urusan MapLibre/network.** Sudah dicoba 2x (reflection call ke `MapLibre.setConnected()`), keduanya menyebabkan native crash/freeze susah didiagnosis. `MainActivity.kt` HARUS tetap versi kosong:
   ```kotlin
@@ -112,7 +116,7 @@ PROTECTED (auth:sanctum):
 `PetaFrontListScreen` (pilih Front, dari `/master/fronts`) → `PetaScreen(front)` (daftar peta UNTUK Front itu saja, filter `frontId`, bisa lebih dari 1 peta per Front) → `MapViewerScreen(peta)` (buka peta). Pola serupa sudah lama dipakai di Persebaran FSBS (`PersebaranFsbsScreen` → `PersebaranMapScreen`).
 
 ### Marker Peta
-**SELALU pakai `addCircle`/`CircleOptions`, JANGAN `addSymbol`/`SymbolOptions`.** Style peta custom (`{"version":8,"sources":{},"layers":[]}`) tidak punya sprite — `addSymbol` gagal diam-diam (tidak error, cuma tidak render). Untuk data banyak (ribuan titik), WAJIB pakai `addCircles()` (plural, batch) bukan loop `await addCircle()` satu-satu — yang terakhir bisa bikin UI macet puluhan detik tanpa indikator loading.
+**Layer lingkaran bawaan plugin (`addCircle`/`addCircles`) berada DI BAWAH layer raster peta yang ditambah belakangan → marker tersembunyi di belakang peta** (itu sebabnya titik Persebaran FSBS tidak terlihat tapi masih bisa diklik; user menerima keadaan itu). **Marker plot FSBS di `MapViewerScreen` kini berupa PIN lokasi (ujung lancip di bawah)** digambar lewat `addImage` (PNG dibuat dengan `dart:ui`, kuning emas = draft, hijau = tersinkron) + `addGeoJsonSource('fsbs-markers')` + `addSymbolLayer` yang ditambah SETELAH layer raster, `iconAnchor: bottom`; refresh lewat `setGeoJsonSource`. Aturan lama di bawah berlaku untuk marker yang memakai annotation bawaan (Persebaran): style peta custom (`{"version":8,"sources":{},"layers":[]}`) tidak punya sprite — `addSymbol` gagal diam-diam (tidak error, cuma tidak render). Untuk data banyak (ribuan titik), WAJIB pakai `addCircles()` (plural, batch) bukan loop `await addCircle()` satu-satu — yang terakhir bisa bikin UI macet puluhan detik tanpa indikator loading.
 
 ### Modul Produksi (Flutter)
 `ProduksiFormScreen` (buat/edit draft lokal, PIC1 auto-fill+disabled saat baru), `RiwayatProduksiScreen` (laporan tersync, status badge), `RevisiProduksiScreen` (fetch dari server, PUT update). Dokumentasi foto (`MultiPhotoPicker` widget reusable) — ambil kamera/galeri multi, upload ke Cloudinary saat sync.
@@ -127,7 +131,9 @@ Lihat rekap lengkap di riwayat chat — semua modul ini SELESAI dan berfungsi. F
 
 ## 7. PEKERJAAN BESAR
 
-**STATUS (9 Okt 2026):**
+**STATUS TERBARU (27 Okt 2026):** Semua item A–E di bawah SUDAH LIVE dan SUDAH DIITES user di HP (berjalan normal). **Perkecualian — dua fitur sengaja DITAHAN di app (keputusan user, 17 Okt 2026): menu Cuti (Personil), Approval Cuti, dan Safety Meeting tampil nonaktif berlabel "Segera"; tap hanya memunculkan "… dalam tahap pengembangan".** Saklar: `cutiDitahan` dan `safetyDitahan` (const bool, keduanya `true`) di atas `lib/app/menu_config.dart` — ubah ke `false` + build ulang untuk mengaktifkan lagi; baris Cuti/Safety di kartu "Perlu Tindakan" & header stat juga disembunyikan oleh saklar itu. Backend, endpoint, dan menu Filament Cuti/Safety Meeting TETAP aktif; polling notifikasi cuti di latar belakang masih jalan. **Ekspor PDF Cuti: user masih memikirkan formatnya (belum ada).** Keputusan user yang DIBATALKAN/tidak perlu: sembunyikan Pengawas Senior dari dropdown "Pilih Pengawas"; opsi "ganti seluruh data lama" di import Block Model; import Sebaran FSBS hanya sheet pertama.
+
+**Riwayat status (9 Okt 2026):**
 - **A (Approval 2 Lapis, Fase 1–5): SELESAI & live di VPS.**
 - **B (Rekonsiliasi): SELESAI & live di VPS.** Total ORE kadar = rata-rata TERTIMBANG BCM (sudah dikonfirmasi user). Form admin input per MINGGU (header sekali + blok HGSO/LGSO/Waste), logika di `RekonsiliasiService`.
 - **Safety Meeting (versi 1): SELESAI di Flutter** — foto + panel keterangan (logo Antam di `assets/images/antam_logo.png`), simpan ke galeri, menu HANYA di beranda Pengawas/WUH. Tanpa server.
@@ -196,7 +202,7 @@ Begitu 3 dropdown terisi → tampilkan **grafik histogram** (2 batang: nilai BM 
 - **BCM**: dijumlahkan (HGSO + LGSO).
 - **Ni/Fe/SiO2/MgO** (kadar): rata-rata TERTIMBANG BCM (BCM dari sisi yang sama: BM dengan BCM BM, Real dengan BCM Real). Bukan rata-rata biasa.
 
-### C. Pengajuan Cuti (BACKEND + FILAMENT + FLUTTER SELESAI 9 Okt 2026, belum dites di device; EKSPOR PDF MENUNGGU FORMAT USER)
+### C. Pengajuan Cuti (BACKEND + FILAMENT + FLUTTER SELESAI & DITES; menu di app DITAHAN "Segera" sejak 17 Okt 2026; EKSPOR PDF belum ada format dari user)
 
 **Keputusan user (sudah final):**
 - Role baru: `pengawas_senior` ditambah ke enum `jabatan` di `user_pegawais` (kini: pengawas, work_unit_head). Hanya 1 orang. **Pengawas Senior TIDAK ditampilkan di dropdown "Pilih Pengawas"** form Produksi & FSBS (filter `jabatan = 'pengawas'` tetap, jangan sampai ikut).
@@ -214,7 +220,7 @@ Begitu 3 dropdown terisi → tampilkan **grafik histogram** (2 batang: nilai BM 
 
 **Urutan:** (1) backend + Filament, (2) Flutter Personil lalu approval, (3) ekspor PDF setelah format user siap.
 
-### D. Arsip Safety Meeting (SELESAI DIKODING 9 Okt 2026 — belum dites di device; backend belum di-deploy ke VPS saat ini ditulis)
+### D. Arsip Safety Meeting (SELESAI & DITES; menu di app DITAHAN "Segera" sejak 17 Okt 2026, backend/Filament tetap aktif)
 
 Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ingin dokumentasi bisa DILIHAT semua Pengawas & WUH, jadi foto dikirim ke server.
 
@@ -228,7 +234,7 @@ Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ing
 
 **Rancangan:** tabel `safety_meetings` (user_pegawai_id pembuat, waktu, lokasi, anggota [id+nama], pembahasan, foto URL); endpoint `POST/GET (daftar+detail)/PUT (ganti foto saja)` di dalam group `auth:sanctum`, dijaga hanya User Pegawai (pembuat saja untuk PUT). Flutter: menu Safety Meeting dibagi "Buat Baru" dan "Arsip"; tombol "Ganti Foto" hanya untuk pembuat.
 
-### E. Redesign Tampilan Menu Aplikasi (SELESAI DIKODING 10 Okt 2026, belum dites di device)
+### E. Redesign Tampilan Menu Aplikasi (SELESAI & LIVE; shell 3 tab + Ganti Password)
 
 **Latar:** menu makin banyak (Personil: 8, Pengawas/WUH: 7, dan akan bertambah Cuti, Approval Cuti, Arsip Safety Meeting). Grid 2 kolom polos di beranda sudah tidak skalabel. User minta tampilan lebih profesional, "seperti aplikasi-aplikasi ternama". Dikerjakan SETELAH/BERSAMA fitur baru supaya menu final langsung masuk desain baru (disarankan: kerjakan SETELAH Cuti & Arsip Safety Meeting).
 
@@ -251,27 +257,30 @@ Saat ini Safety Meeting hanya simpan ke galeri HP (versi 1, selesai). Atasan ing
 
 ## 8. PEKERJAAN LAIN YANG MASIH TERTUNDA (prioritas lebih rendah dari bagian 7)
 
-- **Redesign layar login ala Livin' Mandiri (SELESAI DIKODING 13 Okt 2026, belum dites di device / belum di-deploy: perlu `migrate` di VPS + build APK + isi menu "Slide Login" di Filament).** File: backend `LoginSlide`, `LoginSlideResource`, `LoginSlideController`, `GET /login-slides`; Flutter `login_screen.dart`, `services/login_slide_service.dart`. Tanpa slide aktif, layar memakai latar gradasi biru bawaan. Rencana awal: Layar awal = carousel foto penuh layar (geser manual + otomatis ganti tiap 4–5 detik, indikator titik, logo LACAK di atas, gradasi gelap di bawah, judul+keterangan per slide). Di bawah ada 2 tombol: **Login Personil** dan **Login Pengawas / WUH**; tombol ditekan → bottom sheet form (Username, Password, MASUK, error & loading di dalam sheet). `AuthService`/`loginPengawas`/`AuthGateScreen` tidak berubah.
-  - **Foto & keterangan diambil dari backend** (diatur admin di Filament): tabel `login_slides` (`gambar` URL Cloudinary, `judul`, `keterangan`, `urutan`, `aktif`); menu Filament "Slide Login" (tambah/ganti/urut/aktif-nonaktif); foto diganti/dihapus → `CloudinaryCleanupService`. Endpoint **PUBLIK** `GET /login-slides` (di luar group `auth:sanctum`, bersama `/login`; pakai pembatas laju). Transformasi Cloudinary untuk kompres/resize (portrait ± 1080×1920).
-  - Flutter: cache daftar slide + foto di HP (pola cache Master Data), fallback ke cache saat offline, plus 1 gambar default di dalam APK (dipakai saat pertama buka tanpa internet / belum ada slide aktif). Perubahan di admin muncul di pembukaan app berikutnya.
-
-- **Nama aplikasi final** — belum diputuskan. Brainstorming sempat dilakukan (kandidat: Kadar, Sigap, Gencar, dll), user masih mencari yang "klik".
-- **Logo & Splash Screen animasi** — belum dikerjakan sama sekali, menunggu nama final.
+- **Redesign layar login: SELESAI & LIVE** (lihat bagian 6 "Role & Login"). Catatan: tidak ada gambar default di dalam APK — fallback-nya latar gradasi biru. Foto slide portrait ± 1080×1920, dikelola di Filament "Slide Login".
+- **Nama aplikasi final** — belum diputuskan resmi. Brainstorming sempat dilakukan (kandidat: Kadar, Sigap, Gencar, dll); UI login sudah memakai "LACAK" (aset `assets/images/lacak_mark|wordmark|tagline.png`), tapi user belum menyatakan itu nama final.
+- **Logo & Splash Screen animasi** — belum dikerjakan (logo mark LACAK sudah ada sebagai aset di login).
 - **Persiapan Play Store**:
   - `applicationId` masih `com.example.sigc2_mobile` — WAJIB diganti sebelum publish (Google tolak prefix `com.example`), ganti di `build.gradle.kts` + pindah struktur folder Kotlin + `AndroidManifest.xml`
   - Signing key production belum di-setup (`flutter build apk/appbundle --release` masih pakai debug key kemungkinan besar)
   - Format wajib `.aab` (App Bundle), bukan `.apk`, untuk submit ke Play Store
   - Akun Google Play Developer LAMA (2020, nama "Putra Merpati Jaya") **sudah dihapus permanen** oleh Google (15 Okt 2024, gagal verifikasi tepat waktu) — ada opsi coba pulihkan (ajukan banding/selesaikan verifikasi) atau daftar baru ($25). Belum diputuskan user mau pilih yang mana.
   - **Akun demo untuk reviewer Google** — direncanakan: kolom `is_demo_account` di `personils`, kolom `is_demo_map` di `peta_layers`+`peta_sebaran_layers`. Akun demo cuma boleh lihat peta yang ditandai demo (data krusial), tapi Front/laporan/FSBS boleh tampil apa adanya (tidak terlalu sensitif). **Migration & filter controller BELUM DIKERJAKAN** — sempat direncanakan strukturnya tapi terhenti karena user bilang "nanti saja" setelah tahu backend sudah live di VPS (perlu proses git pull + migrate di server, bukan cuma edit lokal).
-- **Testing yang belum pernah dilakukan user:**
-  - Skenario revisi laporan Produksi yang ditolak (kode sudah ada, belum pernah dites end-to-end)
-  - GPS tracking radius 5 meter di Persebaran FSBS di lokasi Front sungguhan (baru pernah dites pakai lokasi dummy)
+- **Testing:** user menyatakan (Okt 2026) semua fitur yang sudah dibuat dites dan berjalan normal. Yang BELUM terkonfirmasi eksplisit: skenario revisi laporan Produksi yang ditolak end-to-end, dan GPS radius 5 meter Persebaran FSBS di Front sungguhan.
+- **Ide kecil belum disepakati/dikerjakan:** memuat plot FSBS dari server ke peta (marker saat ini hanya dari draft lokal HP itu, tidak ikut HP lain/terhapus-di-server); menampilkan titik Persebaran FSBS di atas raster (seperti pin plot FSBS); progres/notifikasi hasil import di admin.
 
 ---
 
 ## 9. GOTCHA TEKNIS LAIN (ringkasan, lihat riwayat chat untuk detail lengkap jika perlu)
 
 - `queue:work` TIDAK baca ulang kode otomatis — restart manual tiap ubah Job/Import/Service yang dipanggil queue
+- **VPS TIDAK punya worker queue yang selalu hidup** (tidak ada Supervisor). Import Excel (Block Model, Sebaran FSBS) hanya mengantrekan job; setelah upload di admin, jalankan manual di VPS: `php artisan queue:work --stop-when-empty` (error tampil di layar; lihat `failed_jobs`, `php artisan queue:failed`, `queue:flush`). Menyiapkan Supervisor = pekerjaan opsional. Satu job `ReadChunk` gagal menghentikan chunk sesudahnya (chain).
+- **Import Excel membaca SEMUA sheet** dalam file, dengan asumsi format sama. Sheet lain (mis. sheet bantu) → `elevasi cannot be null`. Salin sheet data ke file baru sebelum upload. Sel berisi rumus (mis. `=VLOOKUP(...[1]...)`) atau `#N/A` membuat kolom decimal gagal (`Incorrect decimal value`) → ubah jadi nilai (Paste Special → Values). Satu baris buruk menggagalkan 500 baris satu chunk. Chunk sebelumnya yang sukses SUDAH masuk — hapus dulu (mis. berdasarkan `created_at`) sebelum import ulang agar tidak ganda.
+- **Performa admin (13 Okt 2026):** migration `add_performance_indexes` menambah index di `block_models`, `fsbs`, `produksis`, `permintaans`. Pencarian kolom besar memakai awalan (`LIKE 'x%'`), bukan `%x%`; hindari `whereDate()` pada kolom ber-index (pakai rentang). Tabel besar pakai `deferLoading()`. Setelah `git pull` di VPS: `migrate --force`, `optimize:clear`, `optimize` (rute & konfigurasi ter-cache — perubahan `routes/*.php` baru terbaca setelah `optimize:clear`), kadang `filament:cache-components`, `icons:cache`.
+- **Deploy VPS rutin:** `cd /var/www/lacakgc && git pull && php artisan migrate --force && php artisan optimize:clear && php artisan optimize`; `queue:restart` hanya jika kode yang dipanggil queue berubah.
+- **Keamanan PHP (Okt 2026):** CVE-2026-109618/109619 (RCE kritis, PHP 8.5.0–8.5.11 / 8.4.0–8.4.26 / 8.3.0–8.3.35) → di Ubuntu perbaikan datang lewat backport (versi paket `8.5.4-0ubuntu1.5`, nomor `php -v` tidak berubah). Cek tambalan: `zgrep CVE-2026-10961 /usr/share/doc/php8.5-common/changelog.Debian.gz`, lalu `sudo systemctl restart php8.5-fpm`. Server produksi sudah ditambal & di-restart (27 Okt 2026). PHP Laragon dev (8.3.33) belum 8.3.36.
+- **Sinkron FSBS (Flutter):** foto gagal diunggah = draft dihitung gagal (tidak dikirim tanpa foto lalu ditandai sinkron); setelah 2 kegagalan berturut-turut sinkron berhenti dan sisanya dilaporkan di dialog "Hasil Sinkronisasi". `client_uuid` (= `localId` draft) mencegah data ganda.
+- **Tanggal & zona waktu:** database UTC, tampilan admin & filter FSBS WITA (lihat bagian 3 FSBS). Modul lain: `produksis.tanggal` diisi manual (tidak terpengaruh); Cuti & Saldo log sudah ditampilkan `Asia/Makassar`.
 - Filament `FileUpload` disk `'local'` default ke `storage/app/private/`, bukan `storage/app/` (Laravel 11+)
 - Method yang implement interface Maatwebsite Excel (`map($row)`, `styles($sheet)`) — JANGAN tambah type hint yang beda dari signature interface aslinya (`map($row)` tanpa type hint, `styles(): array` WAJIB ada return type). Pakai PHPDoc comment kalau mau bantu linter, bukan type hint asli.
 - Emulator Android: hindari system image "16K Page Size" (bikin GPS crash `DeadSystemException`). Device fisik via USB debugging jauh lebih baik untuk testing network/GPS (lebih cepat dari build APK berulang) — `flutter run -d <device_id>`.
