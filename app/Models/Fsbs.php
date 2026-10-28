@@ -37,6 +37,14 @@ class Fsbs extends Model
      * Batasi ke data yang dibuat pada rentang tanggal (inklusif) menurut WITA.
      * Memakai rentang waktu (bukan whereDate) supaya index created_at terpakai.
      */
+    protected static function booted(): void
+    {
+        // Data dihapus (admin, satuan/massal) -> foto plot ikut dihapus dari Cloudinary.
+        static::deleted(function (Fsbs $f) {
+            app(\App\Services\CloudinaryCleanupService::class)->hapusBanyakDariUrl([$f->foto_material]);
+        });
+    }
+
     public function scopeTanggalWita($query, string $dari, ?string $sampai = null)
     {
         $awal = \Carbon\Carbon::parse($dari, self::ZONA)->startOfDay()->utc();

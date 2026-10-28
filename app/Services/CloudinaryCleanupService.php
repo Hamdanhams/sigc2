@@ -39,4 +39,29 @@ class CloudinaryCleanupService
             Log::warning("Gagal menghapus file Cloudinary [$publicId]: " . $e->getMessage());
         }
     }
+
+    /**
+     * Hapus banyak foto sekaligus (satu panggilan API per 100 foto, bukan satu per foto),
+     * dipakai saat laporan Produksi/FSBS dihapus. URL non-Cloudinary diabaikan; gagal hanya dicatat.
+     *
+     * @param  array<int, string|null>  $urls
+     */
+    public function hapusBanyakDariUrl(array $urls): void
+    {
+        $ids = [];
+        foreach ($urls as $url) {
+            $id = $this->publicIdDariUrl(is_string($url) ? $url : null);
+            if ($id !== null) {
+                $ids[$id] = $id;
+            }
+        }
+
+        foreach (array_chunk(array_values($ids), 100) as $kelompok) {
+            try {
+                Cloudinary::admin()->deleteAssets($kelompok);
+            } catch (\Throwable $e) {
+                Log::warning('Gagal menghapus ' . count($kelompok) . ' file Cloudinary: ' . $e->getMessage());
+            }
+        }
+    }
 }

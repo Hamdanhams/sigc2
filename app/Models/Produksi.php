@@ -30,6 +30,18 @@ class Produksi extends Model
         'dokumentasi_kendala' => 'array',
     ];
 
+    protected static function booted(): void
+    {
+        // Laporan dihapus (admin, satuan/massal) -> semua foto dokumentasinya ikut dihapus dari
+        // Cloudinary. Penghapusan berantai dari database (mis. user dihapus) TIDAK memicu ini.
+        static::deleted(function (Produksi $p) {
+            app(\App\Services\CloudinaryCleanupService::class)->hapusBanyakDariUrl(array_merge(
+                (array) $p->dokumentasi_produksi,
+                (array) $p->dokumentasi_kendala,
+            ));
+        });
+    }
+
     public function front()
     {
         return $this->belongsTo(Front::class);
