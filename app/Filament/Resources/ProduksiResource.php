@@ -27,6 +27,13 @@ class ProduksiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    public const STATUS_APPROVAL = [
+        'menunggu' => 'Menunggu Pengawas',
+        'menunggu_wuh' => 'Menunggu WUH',
+        'disetujui' => 'Disetujui',
+        'ditolak' => 'Ditolak',
+    ];
+
     public static function form(Form $form): Form
     {
         return $form
@@ -50,6 +57,8 @@ class ProduksiResource extends Resource
                                 '1' => 'Fleet 1',
                                 '2' => 'Fleet 2',
                                 '3' => 'Fleet 3',
+                                'MKR' => 'Fleet MKR',
+                                'BOULDER' => 'Fleet Boulder',
                             ]),
                         Forms\Components\Select::make('pic_1_id')
                             ->label('PIC 1')
@@ -61,16 +70,39 @@ class ProduksiResource extends Resource
                         Forms\Components\Select::make('user_pegawai_id')
                             ->label('User Pegawai')
                             ->relationship('userPegawai', 'nama', fn($query) => $query->where('jabatan', 'pengawas')),
-                        Forms\Components\FileUpload::make('dokumentasi_produksi')
+
+                        // Dokumentasi. Kolom `dokumentasi_*` (daftar URL Cloudinary) SENGAJA tidak ada
+                        // di form: komponen unggah berdisk Cloudinary memeriksa tiap foto ke Cloudinary
+                        // (~2 detik per foto) sehingga halaman edit bisa belasan detik, tidak mengenali
+                        // URL dari aplikasi, dan menimpa daftar jadi kosong saat disimpan. Foto yang
+                        // ada hanya ditampilkan; foto baru (di kolom "tambah") diunggah ke Cloudinary
+                        // lalu DIGABUNG ke daftar saat simpan (lihat trait GabungDokumentasi).
+                        Forms\Components\Placeholder::make('dokumentasi_produksi_saat_ini')
+                            ->label('Dokumentasi Produksi saat ini')
+                            ->content(fn(?Produksi $record) => self::pratinjauFoto($record?->dokumentasi_produksi))
+                            ->visibleOn('edit'),
+                        Forms\Components\FileUpload::make('tambah_dokumentasi_produksi')
+                            ->label(fn(string $operation) => $operation === 'edit' ? 'Tambah foto dokumentasi produksi' : 'Dokumentasi produksi')
                             ->multiple()
-                            ->disk('cloudinary')
-                            ->directory('produksi')
-                            ->required(),
-                        Forms\Components\FileUpload::make('dokumentasi_kendala')
+                            ->image()
+                            ->maxSize(8192)
+                            ->disk('local')
+                            ->directory('produksi-tmp')
+                            ->required(fn(string $operation) => $operation === 'create')
+                            ->helperText(fn(string $operation) => $operation === 'edit'
+                                ? 'Opsional. Foto di atas tidak terhapus; foto baru ditambahkan ke daftar.'
+                                : null),
+                        Forms\Components\Placeholder::make('dokumentasi_kendala_saat_ini')
+                            ->label('Dokumentasi Kendala saat ini')
+                            ->content(fn(?Produksi $record) => self::pratinjauFoto($record?->dokumentasi_kendala))
+                            ->visibleOn('edit'),
+                        Forms\Components\FileUpload::make('tambah_dokumentasi_kendala')
+                            ->label(fn(string $operation) => $operation === 'edit' ? 'Tambah foto dokumentasi kendala' : 'Dokumentasi kendala')
                             ->multiple()
-                            ->disk('cloudinary')
-                            ->directory('kendala')
-                            ->nullable(),
+                            ->image()
+                            ->maxSize(8192)
+                            ->disk('local')
+                            ->directory('kendala-tmp'),
                         Forms\Components\Textarea::make('keterangan')
                             ->dehydrateStateUsing(fn($state) => $state ? Str::upper($state) : $state),
                         Forms\Components\Textarea::make('rencana_produksi_besok')
@@ -157,6 +189,27 @@ class ProduksiResource extends Resource
             ]);
     }
 
+    /** Deretan miniatur foto (URL) untuk ditampilkan di form edit. */
+    public static function pratinjauFoto(?array $daftar): \Illuminate\Support\HtmlString
+    {
+        if (empty($daftar)) {
+            return new \Illuminate\Support\HtmlString('<span style="color:#888">Belum ada foto.</span>');
+        }
+
+        $html = '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+        foreach ($daftar as $item) {
+            $item = (string) $item;
+            if (str_starts_with($item, 'http')) {
+                $html .= '<a href="' . e($item) . '" target="_blank"><img src="' . e($item)
+                    . '" style="height:90px;width:90px;object-fit:cover;border-radius:6px" /></a>';
+            } else {
+                $html .= '<span style="font-size:12px;color:#888">' . e($item) . '</span>';
+            }
+        }
+
+        return new \Illuminate\Support\HtmlString($html . '</div>');
+    }
+
     protected static function updateLookup(callable $set, callable $get, mixed $livewire): void
     {
         $front = $livewire->data['front_id'] ?? null;
@@ -185,9 +238,25 @@ class ProduksiResource extends Resource
                 Tables\Columns\TextColumn::make('shift'),
                 Tables\Columns\TextColumn::make('front.nama_front')->label('Front'),
                 Tables\Columns\TextColumn::make('fleet'),
+                Tables\Columns\TextColumn::make('pic1.nama')->label('PIC 1'),
                 Tables\Columns\TextColumn::make('details_count')->counts('details')->label('Jml Detail'),
+                Tables\Columns\TextColumn::make('status_approval')
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn(?string $state) => self::STATUS_APPROVAL[$state] ?? $state)
+                    ->color(fn(?string $state) => match ($state) {
+                        'disetujui' => 'success',
+                        'ditolak' => 'danger',
+                        'menunggu_wuh' => 'info',
+                        default => 'warning',
+                    }),
             ])
+            // Terbaru di atas: tanggal laporan, lalu yang paling baru dimasukkan.
+            ->defaultSort(fn(Builder $query) => $query->orderByDesc('tanggal')->orderByDesc('id'))
             ->filters([
+                Tables\Filters\SelectFilter::make('status_approval')
+                    ->label('Status')
+                    ->options(self::STATUS_APPROVAL),
                 Tables\Filters\SelectFilter::make('front_id')
                     ->label('Front')
                     ->relationship('front', 'nama_front'),

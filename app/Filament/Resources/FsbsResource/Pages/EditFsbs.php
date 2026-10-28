@@ -8,6 +8,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditFsbs extends EditRecord
 {
+    use UnggahFotoFsbs;
+
     protected static string $resource = FsbsResource::class;
 
     protected function getHeaderActions(): array
@@ -15,5 +17,15 @@ class EditFsbs extends EditRecord
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return $this->unggahFotoFsbs($data, $this->record->foto_material);
+    }
+
+    protected function afterSave(): void
+    {
+        $this->hapusFotoLamaFsbs();
     }
 }

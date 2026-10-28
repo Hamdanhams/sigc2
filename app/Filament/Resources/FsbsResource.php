@@ -65,10 +65,22 @@ class FsbsResource extends Resource
                     ->label('PIC')
                     ->relationship('personil', 'nama')
                     ->required(),
-                Forms\Components\FileUpload::make('foto_material')
+                // Foto lama hanya ditampilkan (kolom foto_material sengaja tidak ada di form,
+                // jadi tidak pernah ikut tertimpa/terhapus). Foto baru lewat kolom di bawahnya;
+                // kalau diisi, foto lama diganti.
+                Forms\Components\Placeholder::make('foto_saat_ini')
+                    ->label('Foto saat ini')
+                    ->content(fn(?Fsbs $record) => ProduksiResource::pratinjauFoto($record?->foto_material ? [$record->foto_material] : []))
+                    ->visibleOn('edit'),
+                Forms\Components\FileUpload::make('foto_upload')
+                    ->label(fn(string $operation) => $operation === 'edit' ? 'Ganti foto (opsional)' : 'Foto material')
                     ->image()
-                    ->disk('cloudinary')
-                    ->directory('fsbs'),
+                    ->maxSize(8192)
+                    ->disk('local')
+                    ->directory('fsbs-tmp')
+                    ->helperText(fn(string $operation) => $operation === 'edit'
+                        ? 'Kosongkan untuk mempertahankan foto saat ini. Jika diisi, foto lama diganti dengan foto baru.'
+                        : null),
                 Forms\Components\TextInput::make('increment')
                     ->dehydrateStateUsing(fn($state) => $state ? Str::upper($state) : $state),
                 Forms\Components\TextInput::make('gridding')
@@ -102,8 +114,23 @@ class FsbsResource extends Resource
                 Tables\Columns\TextColumn::make('titik_produksi'),
                 Tables\Columns\TextColumn::make('elevasi'),
                 Tables\Columns\TextColumn::make('personil.nama')->label('PIC'),
+                Tables\Columns\TextColumn::make('status_approval')
+                    ->label('Status')
+                    ->badge()
+                    ->formatStateUsing(fn(?string $state) => ProduksiResource::STATUS_APPROVAL[$state] ?? $state)
+                    ->color(fn(?string $state) => match ($state) {
+                        'disetujui' => 'success',
+                        'ditolak' => 'danger',
+                        'menunggu_wuh' => 'info',
+                        default => 'warning',
+                    }),
             ])
+            // Terbaru di atas (waktu plot).
+            ->defaultSort('created_at', 'desc')
             ->filters([
+                Tables\Filters\SelectFilter::make('status_approval')
+                    ->label('Status')
+                    ->options(ProduksiResource::STATUS_APPROVAL),
                 Tables\Filters\SelectFilter::make('front')
                     ->label('Front')
                     ->options(fn() => \App\Models\Front::pluck('nama_front', 'inisial')),

@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::post('/upload-foto', [UploadController::class, 'uploadFoto']);
+    Route::post('/upload-signature', [UploadController::class, 'signature'])->middleware('throttle:120,1');
 
     // Produksi
     Route::post('/produksi', [ProduksiController::class, 'store']);
