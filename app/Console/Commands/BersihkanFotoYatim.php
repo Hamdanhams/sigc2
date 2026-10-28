@@ -17,7 +17,8 @@ class BersihkanFotoYatim extends Command
         {--hapus : Benar-benar menghapus (tanpa opsi ini hanya melaporkan)}
         {--umur=3 : Abaikan foto yang lebih muda dari sekian hari (melindungi sinkron yang sedang berjalan)}
         {--folder=* : Folder yang diperiksa (default: fsbs, produksi, kendala)}
-        {--paksa : Abaikan pengaman rasio yatim terlalu besar}';
+        {--paksa : Abaikan pengaman rasio yatim terlalu besar}
+        {--detail : Tampilkan SEMUA foto yatim beserta waktu unggah (WITA), ukuran, dan URL}';
 
     protected $description = 'Laporkan/hapus foto Cloudinary yang tidak dirujuk database (default: hanya laporan)';
 
@@ -77,11 +78,22 @@ class BersihkanFotoYatim extends Command
         $this->line("Dilewati karena lebih muda dari {$umur} hari : {$terlaluBaru}");
         $this->line('YATIM (tidak dirujuk, cukup tua)            : ' . count($yatim) . ' (~' . round($byteYatim / 1048576, 1) . ' MB)');
 
-        foreach (array_slice($yatim, 0, 15) as $id) {
-            $this->line("  - {$id}");
-        }
-        if (count($yatim) > 15) {
-            $this->line('  ... dan ' . (count($yatim) - 15) . ' lainnya');
+        if ($this->option('detail')) {
+            // Urut waktu unggah, supaya mudah dicocokkan dengan data yang kehilangan tautan foto.
+            usort($yatim, fn($a, $b) => strcmp($semua[$a]['created_at'] ?? '', $semua[$b]['created_at'] ?? ''));
+            foreach ($yatim as $id) {
+                $waktu = isset($semua[$id]['created_at'])
+                    ? \Carbon\Carbon::parse($semua[$id]['created_at'])->timezone('Asia/Makassar')->format('d/m H:i:s')
+                    : '-';
+                $this->line(sprintf('  %s WITA | %4d KB | %s', $waktu, round(($semua[$id]['bytes'] ?? 0) / 1024), $semua[$id]['secure_url'] ?? $id));
+            }
+        } else {
+            foreach (array_slice($yatim, 0, 15) as $id) {
+                $this->line("  - {$id}");
+            }
+            if (count($yatim) > 15) {
+                $this->line('  ... dan ' . (count($yatim) - 15) . ' lainnya (pakai --detail untuk semuanya)');
+            }
         }
 
         if (! $yatim) {
