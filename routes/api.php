@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\SebaranFsbsController;
 use App\Http\Controllers\Api\PetaSebaranController;
 use App\Http\Controllers\Api\PetaBlockModelController;
+use App\Http\Controllers\Api\SectionDokumenController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\FsbsApprovalController;
 use App\Http\Controllers\Api\MyFsbsController;
@@ -90,6 +91,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/peta-block-model', [PetaBlockModelController::class, 'index']);
     Route::get('/peta-block-model/{id}/download', [PetaBlockModelController::class, 'download'])->name('api.peta-block-model.download');
     Route::get('/peta-block-model/{id}/sebaran', [PetaBlockModelController::class, 'sebaran']);
+
+    // Section: dokumen PDF per Front
+    Route::get('/section', [SectionDokumenController::class, 'index']);
+    Route::get('/section/{id}/download', [SectionDokumenController::class, 'download'])->name('api.section.download');
 
     // Sebaran FSBS + Peta Sebaran: HANYA untuk APK lama. Peta Sebaran sudah dihapus
     // (digantikan Peta Block Model), endpoint-nya mengembalikan daftar kosong.
