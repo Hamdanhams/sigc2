@@ -96,6 +96,11 @@ class FsbsResource extends Resource
                     ->numeric()
                     ->disabled(fn($state) => filled($state))
                     ->dehydrated(),
+                Forms\Components\TextInput::make('ni')
+                    ->label('Ni (hasil analisa, %)')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(100),
             ])
             ->columns(3);
     }
@@ -113,6 +118,7 @@ class FsbsResource extends Resource
                 Tables\Columns\TextColumn::make('front'),
                 Tables\Columns\TextColumn::make('titik_produksi'),
                 Tables\Columns\TextColumn::make('elevasi'),
+                Tables\Columns\TextColumn::make('ni')->label('Ni')->numeric(3)->placeholder('-')->sortable(),
                 Tables\Columns\TextColumn::make('personil.nama')->label('PIC'),
                 Tables\Columns\TextColumn::make('status_approval')
                     ->label('Status')

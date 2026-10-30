@@ -33,6 +33,7 @@ class FsbsExport implements FromCollection, WithHeadings, WithMapping, WithStyle
             'Koordinat Y',
             'Ni BM',
             'Fe BM',
+            'Ni (analisa)',
         ];
     }
 
@@ -48,6 +49,7 @@ class FsbsExport implements FromCollection, WithHeadings, WithMapping, WithStyle
             $row->koordinat_y !== null ? (float) $row->koordinat_y : null,
             $row->ni_bm !== null ? (float) $row->ni_bm : null,
             $row->fe_bm !== null ? (float) $row->fe_bm : null,
+            $row->ni !== null ? (float) $row->ni : null,
         ];
     }
 
@@ -58,6 +60,7 @@ class FsbsExport implements FromCollection, WithHeadings, WithMapping, WithStyle
             'F' => '0.00',
             'G' => NumberFormat::FORMAT_NUMBER_00,
             'H' => NumberFormat::FORMAT_NUMBER_00,
+            'I' => '0.000',
         ];
     }
 

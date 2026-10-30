@@ -24,6 +24,7 @@ class Fsbs extends Model
         'gridding',
         'ni_bm',
         'fe_bm',
+        'ni',
         'user_pegawai_id',
         'status_approval',
         'catatan_penolakan',

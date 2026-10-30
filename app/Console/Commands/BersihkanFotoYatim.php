@@ -16,7 +16,7 @@ class BersihkanFotoYatim extends Command
     protected $signature = 'cloudinary:bersihkan-yatim
         {--hapus : Benar-benar menghapus (tanpa opsi ini hanya melaporkan)}
         {--umur=3 : Abaikan foto yang lebih muda dari sekian hari (melindungi sinkron yang sedang berjalan)}
-        {--folder=* : Folder yang diperiksa (default: fsbs, produksi, kendala)}
+        {--folder=* : Folder yang diperiksa (default: fsbs, produksi, kendala, permintaan, safety-meeting)}
         {--paksa : Abaikan pengaman rasio yatim terlalu besar}
         {--detail : Tampilkan SEMUA foto yatim beserta waktu unggah (WITA), ukuran, dan URL}';
 
@@ -24,7 +24,7 @@ class BersihkanFotoYatim extends Command
 
     public function handle(CloudinaryCleanupService $cleanup): int
     {
-        $folders = $this->option('folder') ?: ['fsbs', 'produksi', 'kendala'];
+        $folders = $this->option('folder') ?: ['fsbs', 'produksi', 'kendala', 'permintaan', 'safety-meeting'];
         $umur = max(1, (int) $this->option('umur'));
         $batas = now()->subDays($umur);
 

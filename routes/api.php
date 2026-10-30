@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PetaLayerController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\SebaranFsbsController;
 use App\Http\Controllers\Api\PetaSebaranController;
+use App\Http\Controllers\Api\PetaBlockModelController;
 use App\Http\Controllers\Api\ApprovalController;
 use App\Http\Controllers\Api\FsbsApprovalController;
 use App\Http\Controllers\Api\MyFsbsController;
@@ -35,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::post('/upload-foto', [UploadController::class, 'uploadFoto']);
-    Route::post('/upload-signature', [UploadController::class, 'signature'])->middleware('throttle:120,1');
+    Route::post('/upload-signature', [UploadController::class, 'signature'])->middleware('throttle:api-akun');
 
     // Produksi
     Route::post('/produksi', [ProduksiController::class, 'store']);
@@ -47,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // FSBS
     Route::post('/fsbs', [FsbsController::class, 'store']);
     Route::get('/fsbs', [FsbsController::class, 'index']);
+    Route::get('/fsbs/peta', [FsbsController::class, 'peta']);
+    Route::patch('/fsbs/ni', [FsbsController::class, 'updateNi'])->middleware('throttle:api-akun');
 
     // Status & revisi FSBS milik Personil (per grup Front + Tanggal)
     Route::get('/my-fsbs', [MyFsbsController::class, 'index']);
@@ -83,7 +86,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/master/personils', [MasterDataController::class, 'personils']);
     Route::get('/master/user-pegawais', [MasterDataController::class, 'userPegawais']);
 
-    // Sebaran FSBS + Peta Sebaran
+    // Peta Block Model (+ titik sebaran FSBS per peta)
+    Route::get('/peta-block-model', [PetaBlockModelController::class, 'index']);
+    Route::get('/peta-block-model/{id}/download', [PetaBlockModelController::class, 'download'])->name('api.peta-block-model.download');
+    Route::get('/peta-block-model/{id}/sebaran', [PetaBlockModelController::class, 'sebaran']);
+
+    // Sebaran FSBS + Peta Sebaran: HANYA untuk APK lama. Peta Sebaran sudah dihapus
+    // (digantikan Peta Block Model), endpoint-nya mengembalikan daftar kosong.
     Route::get('/sebaran-fsbs/{front}', [SebaranFsbsController::class, 'byFront']);
     Route::get('/peta-sebaran', [PetaSebaranController::class, 'index']);
     Route::get('/peta-sebaran/{id}/download', [PetaSebaranController::class, 'download'])->name('api.peta-sebaran.download');

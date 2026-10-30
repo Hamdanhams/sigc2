@@ -15,7 +15,17 @@ class UploadController extends Controller
      * Rahasia API tetap di server; HP hanya menerima tanda tangan berumur pendek untuk
      * folder tetap. Satu tanda tangan boleh dipakai untuk banyak foto dalam waktu singkat.
      */
-    public function signature()
+    /** Folder Cloudinary yang boleh diminta aplikasi; selain ini jatuh ke 'fsbs' (perilaku APK lama). */
+    private const FOLDER_BOLEH = ['fsbs', 'produksi', 'kendala', 'permintaan', 'safety-meeting'];
+
+    private function folderDariRequest(Request $request): string
+    {
+        $folder = (string) $request->input('folder', 'fsbs');
+
+        return in_array($folder, self::FOLDER_BOLEH, true) ? $folder : 'fsbs';
+    }
+
+    public function signature(Request $request)
     {
         $url = parse_url((string) config('cloudinary.cloud_url'));
         $cloud = $url['host'] ?? null;
@@ -26,7 +36,7 @@ class UploadController extends Controller
             return response()->json(['message' => 'Cloudinary belum dikonfigurasi'], 500);
         }
 
-        $params = ['folder' => 'fsbs', 'timestamp' => time()];
+        $params = ['folder' => $this->folderDariRequest($request), 'timestamp' => time()];
 
         return response()->json([
             'upload_url' => "https://api.cloudinary.com/v1_1/{$cloud}/image/upload",
@@ -53,7 +63,7 @@ class UploadController extends Controller
         $mulai = microtime(true);
         $uploadedFile = Cloudinary::upload(
             $file->getRealPath(),
-            ['folder' => 'fsbs']
+            ['folder' => $this->folderDariRequest($request)]
         );
         $detik = round(microtime(true) - $mulai, 2);
 

@@ -31,5 +31,15 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(10)->by($kunci);
         });
+
+        // Pembatas umum per akun untuk rute API biasa. JANGAN pakai "throttle:N,1" di rute
+        // auth:sanctum: bawaannya memanggil getAuthIdentifier() yang tidak ada di Personil/UserPegawai
+        // sehingga rute error 500.
+        RateLimiter::for('api-akun', function (Request $request) {
+            $user = $request->user();
+            $kunci = $user ? class_basename($user) . ':' . $user->getKey() : $request->ip();
+
+            return Limit::perMinute(120)->by($kunci);
+        });
     }
 }

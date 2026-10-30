@@ -30,21 +30,25 @@ class MapConversionService
     ];
 }
 
-    public function convert(mixed $peta): void
+    /**
+     * @param string $folder Subfolder di storage/app/public untuk hasil ZIP. Tiap jenis peta WAJIB
+     *                       punya folder sendiri (id dihitung per tabel, jadi folder bersama akan bertabrakan).
+     */
+    public function convert(mixed $peta, string $folder = 'mbtiles'): void
     {
         $peta->update(['status' => 'processing']);
 
+        $baseDir = storage_path('app/public/' . $folder);
+        $tiffPath = $baseDir . '/' . $peta->id . '.tif';
+        $tilesDir = $baseDir . '/' . $peta->id . '_tiles';
+        $zipPath = $baseDir . '/' . $peta->id . '.zip';
+
         try {
             $inputPath = storage_path('app/private/' . $peta->file_geopdf);
-            $baseDir = storage_path('app/public/mbtiles');
 
             if (!is_dir($baseDir)) {
                 mkdir($baseDir, 0755, true);
             }
-
-            $tiffPath = $baseDir . '/' . $peta->id . '.tif';
-            $tilesDir = $baseDir . '/' . $peta->id . '_tiles';
-            $zipPath = $baseDir . '/' . $peta->id . '.zip';
 
             $env = $this->gdalEnv();
 
@@ -115,7 +119,7 @@ class MapConversionService
 
             $peta->update([
                 'status' => 'selesai',
-                'file_mbtiles' => 'mbtiles/' . $peta->id . '.zip',
+                'file_mbtiles' => $folder . '/' . $peta->id . '.zip',
                 'center_lat' => $centerLat,
                 'center_lon' => $centerLon,
                 'min_zoom' => $this->minZoom,
@@ -123,13 +127,15 @@ class MapConversionService
                 'pesan_error' => null,
             ]);
 
-            @unlink($tiffPath);
-            $this->deleteDirectory($tilesDir);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $peta->update([
                 'status' => 'gagal',
-                'pesan_error' => $e->getMessage(),
+                'pesan_error' => mb_substr($e->getMessage(), 0, 2000),
             ]);
+        } finally {
+            // Bersihkan file sementara (GeoTIFF besar + folder tile) baik berhasil maupun gagal.
+            @unlink($tiffPath);
+            $this->deleteDirectory($tilesDir);
         }
     }
 
