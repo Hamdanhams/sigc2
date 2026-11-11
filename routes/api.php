@@ -27,6 +27,8 @@ use App\Http\Controllers\Api\PermintaanController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/login-pengawas', [AuthController::class, 'loginPengawas']);
 Route::get('/login-slides', [LoginSlideController::class, 'index'])->middleware('throttle:60,1');
+// Loop: sampel referensi (publik, supaya bisa dipakai dari layar login tanpa akun)
+Route::get('/loop/sampel', [\App\Http\Controllers\Api\LoopController::class, 'sampel'])->middleware('throttle:30,1');
 
 // ================= PROTECTED (wajib login) =================
 Route::middleware('auth:sanctum')->group(function () {
