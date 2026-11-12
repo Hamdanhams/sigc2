@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LoopSampel;
+use Illuminate\Support\Facades\Storage;
 
 /** Halaman web Loop (/loop). Pencocokan foto berjalan di browser; server hanya menyajikan halaman dan model. */
 class LoopWebController extends Controller
@@ -10,6 +11,21 @@ class LoopWebController extends Controller
     public function halaman()
     {
         return view('loop', ['modelVersi' => LoopSampel::MODEL_VERSI]);
+    }
+
+    /** Foto sampel referensi (hanya tampil saat pengguna menekan "Lihat foto referensi"). */
+    public function foto(string $code)
+    {
+        $sampel = LoopSampel::where('code', $code)->first();
+        $disk = Storage::disk('public');
+
+        if (!$sampel || !$sampel->foto || !$disk->exists($sampel->foto)) {
+            abort(404);
+        }
+
+        return response()->file($disk->path($sampel->foto), [
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
 
     /**

@@ -8,5 +8,7 @@ Route::redirect('/', '/admin');
 
 // Loop versi web (publik, tanpa login): scanner kemiripan material, jalan di browser.
 Route::get('/loop', [LoopWebController::class, 'halaman'])->name('loop');
+Route::get('/loop/foto/{code}', [LoopWebController::class, 'foto'])
+    ->where('code', '[A-Za-z0-9._-]+')->middleware('throttle:60,1');
 Route::get('/loop/model/{versi}.onnx', [LoopWebController::class, 'model'])
     ->where('versi', '[A-Za-z0-9._-]+');

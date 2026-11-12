@@ -118,6 +118,24 @@
         .kadar small { display: block; font-size: 10.5px; color: var(--muted); }
         .kadar b { font-size: 13px; }
 
+        .btn-ref {
+            margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px;
+            border-radius: 8px; border: 1px solid var(--primary); background: transparent; color: var(--primary);
+            font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+        }
+        .btn-ref svg { width: 16px; height: 16px; }
+        .modal {
+            position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.72);
+            display: flex; align-items: center; justify-content: center; padding: 16px;
+        }
+        .modal-isi { position: relative; max-width: 560px; width: 100%; }
+        .modal-isi img { display: block; width: 100%; max-height: 78vh; object-fit: contain; border-radius: 12px; background: #000; }
+        .modal-cap { margin-top: 8px; color: #fff; font-size: 12.5px; text-align: center; }
+        .modal-tutup {
+            position: absolute; top: -14px; right: -6px; width: 34px; height: 34px; border-radius: 50%;
+            border: 0; background: #fff; color: #111; font-size: 20px; line-height: 1; cursor: pointer;
+        }
+
         footer { margin-top: 24px; text-align: center; font-size: 11.5px; color: #98A1AE; }
         .sembunyi { display: none !important; }
     </style>
@@ -388,6 +406,10 @@
                 ${baris('Warna', s.warna)}${baris('Ukuran', s.ukuran)}${baris('Komposisi', s.komposisi)}${baris('Keterangan', s.keterangan)}
             </div>
             ${kadar ? `<div class="kadar-judul">Kadar sampel referensi (%)</div><div class="kadar">${kadar}</div>` : ''}
+            <button type="button" class="btn-ref" data-code="${esc(s.code)}" data-judul="${esc(s.kode_sample || s.code)}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>
+                Lihat foto referensi
+            </button>
         </article>`;
     }
 
@@ -443,6 +465,38 @@
             proses(f);
         });
     }
+
+    // ---------- Modal foto referensi ----------
+    function tutupModal() {
+        const m = document.getElementById('modal-ref');
+        if (m) m.remove();
+    }
+
+    function bukaModal(code, judul) {
+        tutupModal();
+        const m = document.createElement('div');
+        m.id = 'modal-ref';
+        m.className = 'modal';
+        m.innerHTML = `<div class="modal-isi">
+            <button type="button" class="modal-tutup" aria-label="Tutup">×</button>
+            <img alt="Foto referensi" src="/loop/foto/${encodeURIComponent(code)}">
+            <div class="modal-cap">${esc(judul)} • foto referensi, bukan foto Anda</div>
+        </div>`;
+        m.addEventListener('click', (e) => {
+            if (e.target === m || e.target.classList.contains('modal-tutup')) tutupModal();
+        });
+        m.querySelector('img').addEventListener('error', () => {
+            m.querySelector('.modal-cap').textContent = 'Foto referensi tidak tersedia.';
+            m.querySelector('img').remove();
+        });
+        document.body.appendChild(m);
+    }
+
+    el.hasil.addEventListener('click', (e) => {
+        const b = e.target.closest('.btn-ref');
+        if (b) bukaModal(b.dataset.code, b.dataset.judul);
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') tutupModal(); });
 
     el.kamera.addEventListener('click', () => el.inKamera.click());
     el.galeri.addEventListener('click', () => el.inGaleri.click());
