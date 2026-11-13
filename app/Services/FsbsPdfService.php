@@ -10,6 +10,20 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class FsbsPdfService
 {
+    /**
+     * Ringkasan plot Front + rentang tanggal (WITA) yang belum disetujui, mis. "12 Menunggu Pengawas, 3 Ditolak".
+     * Kosong bila semuanya sudah disetujui. PDF hanya boleh dibuat bila hasilnya kosong.
+     */
+    public function ringkasBelumDisetujui(string $frontInisial, string $tanggalMulai, string $tanggalSelesai): string
+    {
+        $records = Fsbs::where('front', $frontInisial)
+            ->tanggalWita($tanggalMulai, $tanggalSelesai)
+            ->where('status_approval', '!=', 'disetujui')
+            ->get(['id', 'status_approval']);
+
+        return CapDokumenService::ringkasBelumDisetujui($records);
+    }
+
     public function generate(string $frontInisial, string $tanggalMulai, string $tanggalSelesai, int $userPegawaiId)
     {
         $front = Front::where('inisial', $frontInisial)->first();
@@ -55,6 +69,7 @@ class FsbsPdfService
             'userPegawai' => $userPegawai,
             'userPegawaiTtd' => $userPegawaiTtd,
             'logoBase64' => $logoBase64,
+            'capDokumen' => CapDokumenService::teks(),
         ])->setPaper('a4', 'landscape');
 
         return $pdf;

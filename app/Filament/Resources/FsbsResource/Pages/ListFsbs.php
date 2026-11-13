@@ -40,6 +40,24 @@ class ListFsbs extends ListRecords
                         ->required(),
                 ])
                 ->action(function (array $data) {
+                    $belum = app(FsbsPdfService::class)->ringkasBelumDisetujui(
+                        $data['front_inisial'],
+                        $data['tanggal_mulai'],
+                        $data['tanggal_selesai']
+                    );
+
+                    if ($belum !== '') {
+                        Notification::make()
+                            ->title('Ada plot yang belum disetujui')
+                            ->body("Rentang tanggal yang Anda pilih mencakup plot yang belum disetujui ({$belum}). "
+                                . 'PDF hanya dapat dibuat bila semua plot sudah disetujui Pengawas dan Work Unit Head. '
+                                . 'Selesaikan persetujuannya dulu, atau persempit rentang tanggalnya.')
+                            ->warning()
+                            ->persistent()
+                            ->send();
+                        return;
+                    }
+
                     $pdf = app(FsbsPdfService::class)->generate(
                         $data['front_inisial'],
                         $data['tanggal_mulai'],

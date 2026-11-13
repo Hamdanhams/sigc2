@@ -15,6 +15,10 @@
         .form-info-cell { font-size: 8px; }
         .info-table td { border: none; padding: 1px 3px; }
         .ttd-img { height: 40px; object-fit: contain; }
+        .cap-dokumen {
+            margin-top: 8px; padding: 3px 8px; border: 1px solid #1E3A5F; color: #1E3A5F;
+            font-size: 7.5px; font-weight: bold; text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -122,6 +126,8 @@
             @endif
         </tr>
     </table>
+
+    <div class="cap-dokumen">{{ $capDokumen }}</div>
 </div>
 @endforeach
 

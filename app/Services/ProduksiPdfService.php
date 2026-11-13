@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\JamKerjaShift;
 use App\Models\Produksi;
 use App\Models\UserPegawai;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -47,6 +48,7 @@ class ProduksiPdfService
                 'produksi' => $produksi,
                 'details' => $details,
                 'totalRitase' => $totalRitase,
+                'jamKerja' => JamKerjaShift::teksUntukShift((string) $produksi->shift),
                 'picTtd' => $this->getTtdBase64($produksi->pic1?->ttd),
                 'pengawasTtd' => $this->getTtdBase64($produksi->userPegawai?->ttd),
             ];
@@ -58,7 +60,8 @@ class ProduksiPdfService
             'laporanData' => $laporanData,
             'workUnitHead' => $workUnitHead,
             'headTtd' => $headTtd,
-            'tanggalCetak' => now()->translatedFormat('d F Y'),
+            'tanggalCetak' => now('Asia/Makassar')->locale('id')->translatedFormat('d F Y'),
+            'capDokumen' => CapDokumenService::teks(),
         ])->setPaper('a4', 'landscape');
 
         return $pdf;

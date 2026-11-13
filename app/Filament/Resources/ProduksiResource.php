@@ -298,6 +298,10 @@ class ProduksiResource extends Resource
                 Tables\Actions\Action::make('exportPdf')
                     ->label('Export PDF')
                     ->icon('heroicon-o-document-arrow-down')
+                    ->disabled(fn($record) => $record->status_approval !== 'disetujui')
+                    ->tooltip(fn($record) => $record->status_approval !== 'disetujui'
+                        ? 'Belum bisa diekspor: laporan ini masih berstatus ' . (self::STATUS_APPROVAL[$record->status_approval] ?? $record->status_approval) . '.'
+                        : null)
                     ->form([
                         Forms\Components\Select::make('work_unit_head_id')
                             ->label('Grade Control Work Unit Head')
@@ -305,6 +309,15 @@ class ProduksiResource extends Resource
                             ->required(),
                     ])
                     ->action(function ($record, array $data) {
+                        if ($record->status_approval !== 'disetujui') {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Laporan belum bisa diekspor')
+                                ->body('PDF hanya dapat dibuat untuk laporan yang sudah disetujui Pengawas dan Work Unit Head.')
+                                ->warning()
+                                ->send();
+                            return;
+                        }
+
                         $record->load('details', 'front', 'pic1', 'userPegawai');
                         $pdf = app(ProduksiPdfService::class)->generate(collect([$record]), $data['work_unit_head_id']);
 
@@ -338,7 +351,21 @@ class ProduksiResource extends Resource
                                 ->options(UserPegawai::pluck('nama', 'id'))
                                 ->required(),
                         ])
-                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data) {
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data, Tables\Actions\BulkAction $action) {
+                            $belum = \App\Services\CapDokumenService::ringkasBelumDisetujui($records);
+
+                            if ($belum !== '') {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Ada laporan yang belum disetujui')
+                                    ->body("Laporan yang Anda pilih mencakup yang belum disetujui ({$belum}). "
+                                        . 'PDF hanya dapat dibuat untuk laporan yang sudah disetujui Pengawas dan Work Unit Head. '
+                                        . 'Hapus centang laporan tersebut, lalu coba lagi.')
+                                    ->warning()
+                                    ->persistent()
+                                    ->send();
+                                $action->halt(); // pilihan tetap dipertahankan
+                            }
+
                             $records->load('details', 'front', 'pic1', 'userPegawai');
                             $pdf = app(ProduksiPdfService::class)->generate($records, $data['work_unit_head_id']);
 

@@ -17,6 +17,12 @@
         .strip-box { border: 1px solid #000; padding: 5px; }
         .signature-box { text-align: center; width: 33%; }
         .ttd-img { height: 50px; object-fit: contain; }
+        table.bordered { table-layout: fixed; }
+        .bordered td, .bordered th { word-wrap: break-word; }
+        .cap-dokumen {
+            margin-top: 10px; padding: 4px 8px; border: 1px solid #1E3A5F; color: #1E3A5F;
+            font-size: 8px; font-weight: bold; text-align: center; letter-spacing: .2px;
+        }
     </style>
 </head>
 <body>
@@ -45,7 +51,7 @@
     <table class="info-table">
         <tr>
             <td width="12%">Hari / Tanggal</td>
-            <td width="38%">: {{ \Carbon\Carbon::parse($item['produksi']->tanggal)->translatedFormat('l, d F Y') }}</td>
+            <td width="38%">: {{ \Carbon\Carbon::parse($item['produksi']->tanggal)->locale('id')->translatedFormat('l, d F Y') }}</td>
             <td width="12%">Lokasi Tambang</td>
             <td width="38%">: {{ $item['produksi']->front->lokasi ?? '-' }}</td>
         </tr>
@@ -57,7 +63,7 @@
         </tr>
         <tr>
             <td>Jam Kerja</td>
-            <td>: {{ $item['produksi']->jam_mulai ? \Carbon\Carbon::parse($item['produksi']->jam_mulai)->format('H:i') : '-' }} - {{ $item['produksi']->jam_selesai ? \Carbon\Carbon::parse($item['produksi']->jam_selesai)->format('H:i') : '-' }}</td>
+            <td>: {{ $item['jamKerja'] ?? '-' }}</td>
             <td>Fleet</td>
             <td>: {{ $item['produksi']->fleet ?? '-' }}</td>
         </tr>
@@ -68,20 +74,20 @@
     <table class="bordered">
         <thead>
             <tr>
-                <th rowspan="2">No.</th>
-                <th rowspan="2">Kode Produksi Tambang</th>
+                <th rowspan="2" style="width: 5%;">No.</th>
+                <th rowspan="2" style="width: 19%;">Kode Produksi Tambang</th>
                 <th colspan="2">Elevasi</th>
                 <th colspan="2">Blok Model</th>
-                <th rowspan="2">Tujuan Dumping</th>
-                <th rowspan="2">Jumlah Ritase</th>
-                <th rowspan="2">Gridding</th>
-                <th rowspan="2">Keterangan</th>
+                <th rowspan="2" style="width: 9%;">Tujuan Dumping</th>
+                <th rowspan="2" style="width: 8%;">Jumlah Ritase</th>
+                <th rowspan="2" style="width: 8%;">Gridding</th>
+                <th rowspan="2" style="width: 27%;">Keterangan</th>
             </tr>
             <tr>
-                <th>Dari</th>
-                <th>Ke</th>
-                <th>Ni (%)</th>
-                <th>Fe (%)</th>
+                <th style="width: 5%;">Dari</th>
+                <th style="width: 5%;">Ke</th>
+                <th style="width: 7.5%;">Ni (%)</th>
+                <th style="width: 7.5%;">Fe (%)</th>
             </tr>
         </thead>
         <tbody>
@@ -155,6 +161,8 @@
             </td>
         </tr>
     </table>
+
+    <div class="cap-dokumen">{{ $capDokumen }}</div>
 
 </div>
 @endforeach
