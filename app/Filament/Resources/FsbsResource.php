@@ -211,44 +211,68 @@ class FsbsResource extends Resource
                         ->label('Export KML')
                         ->icon('heroicon-o-globe-alt')
                         ->action(function (Collection $records) {
-                            $converter = app(CoordinateConversionService::class);
                             $filename = 'fsbs_export_' . now()->format('Ymd_His') . '.kml';
-
-                            $placemarks = '';
-                            foreach ($records as $r) {
-                                if (!$r->koordinat_x || !$r->koordinat_y) continue;
-
-                                $latLon = $converter->utmToLatLon((float) $r->koordinat_x, (float) $r->koordinat_y);
-
-                                $deskripsi = "Front: {$r->front}<br/>"
-                                    . "Titik Produksi: {$r->titik_produksi}<br/>"
-                                    . "Elevasi: {$r->elevasi}<br/>"
-                                    . "Ni BM: {$r->ni_bm}, Fe BM: {$r->fe_bm}<br/>";
-
-                                if ($r->foto_material) {
-                                    $fotoUrl = $r->foto_material;
-                                    $deskripsi .= "<br/><img src=\"{$fotoUrl}\" width=\"300\"/>";
-                                }
-
-                                $placemarks .= '<Placemark>'
-                                    . '<name>' . htmlspecialchars($r->kode_sampel) . '</name>'
-                                    . '<description><![CDATA[' . $deskripsi . ']]></description>'
-                                    . '<Point><coordinates>' . $latLon['lon'] . ',' . $latLon['lat'] . ',0</coordinates></Point>'
-                                    . '</Placemark>';
-                            }
-
-                            $content = '<?xml version="1.0" encoding="UTF-8"?>'
-                                . '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>'
-                                . $placemarks
-                                . '</Document></kml>';
+                            $content = self::bangunKml($records);
 
                             return response()->streamDownload(function () use ($content) {
                                 echo $content;
                             }, $filename, ['Content-Type' => 'application/vnd.google-earth.kml+xml']);
                         })
                         ->deselectRecordsAfterCompletion(),
+
+                    // KMZ = KML yang dikompres (zip berisi doc.kml); dibuka Google Earth / aplikasi peta seperti KML.
+                    Tables\Actions\BulkAction::make('exportKmz')
+                        ->label('Export KMZ')
+                        ->icon('heroicon-o-globe-alt')
+                        ->action(function (Collection $records) {
+                            $filename = 'fsbs_export_' . now()->format('Ymd_His') . '.kmz';
+                            $tmp = tempnam(sys_get_temp_dir(), 'kmz');
+
+                            $zip = new \ZipArchive();
+                            $zip->open($tmp, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+                            $zip->addFromString('doc.kml', self::bangunKml($records));
+                            $zip->close();
+
+                            return response()->download($tmp, $filename, [
+                                'Content-Type' => 'application/vnd.google-earth.kmz',
+                            ])->deleteFileAfterSend(true);
+                        })
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ]);
+    }
+
+    /** Isi KML (dipakai Export KML dan Export KMZ): satu Placemark per plot yang punya koordinat. */
+    protected static function bangunKml(Collection $records): string
+    {
+        $converter = app(CoordinateConversionService::class);
+
+        $placemarks = '';
+        foreach ($records as $r) {
+            if (!$r->koordinat_x || !$r->koordinat_y) continue;
+
+            $latLon = $converter->utmToLatLon((float) $r->koordinat_x, (float) $r->koordinat_y);
+
+            $deskripsi = "Front: {$r->front}<br/>"
+                . "Titik Produksi: {$r->titik_produksi}<br/>"
+                . "Elevasi: {$r->elevasi}<br/>"
+                . "Ni BM: {$r->ni_bm}, Fe BM: {$r->fe_bm}<br/>";
+
+            if ($r->foto_material) {
+                $deskripsi .= "<br/><img src=\"{$r->foto_material}\" width=\"300\"/>";
+            }
+
+            $placemarks .= '<Placemark>'
+                . '<name>' . htmlspecialchars($r->kode_sampel) . '</name>'
+                . '<description><![CDATA[' . $deskripsi . ']]></description>'
+                . '<Point><coordinates>' . $latLon['lon'] . ',' . $latLon['lat'] . ',0</coordinates></Point>'
+                . '</Placemark>';
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8"?>'
+            . '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>'
+            . $placemarks
+            . '</Document></kml>';
     }
 
     public static function getRelations(): array
