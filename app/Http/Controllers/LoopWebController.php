@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\LoopSampel;
 use Illuminate\Support\Facades\Storage;
 
-/** Halaman web Loop (/loop). Pencocokan foto berjalan di browser; server hanya menyajikan halaman dan model. */
+/** Halaman web GeoLens (/geolens). Pencocokan foto berjalan di browser; server hanya menyajikan halaman dan model. */
 class LoopWebController extends Controller
 {
     public function halaman()
     {
-        return view('loop', ['modelVersi' => LoopSampel::MODEL_VERSI]);
+        return view('geolens', ['modelVersi' => LoopSampel::MODEL_VERSI]);
     }
 
     /** Foto sampel referensi (hanya tampil saat pengguna menekan "Lihat foto referensi"). */

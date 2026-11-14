@@ -4,13 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#1E3A5F">
+    <meta name="theme-color" content="#FFFFFF">
     <meta name="color-scheme" content="light">
-    <title>Loop — Pembanding Material</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/geolens-favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/geolens-icon-192.png">
+    <link rel="apple-touch-icon" href="/images/geolens-apple-touch-icon.png">
+    <title>GeoLens — Pembanding Material</title>
     <style>
         :root {
-            --primary: #1E3A5F;
-            --accent: #D4A017;
+            --primary: #0B3F94;   /* biru logo GeoLens */
+            --accent: #F26B00;    /* oranye logo GeoLens */
             --bg: #F4F6F9;
             --card: #FFFFFF;
             --text: #1B2430;
@@ -31,16 +34,25 @@
             -webkit-text-size-adjust: 100%;
         }
         header {
-            background: var(--primary);
-            color: #fff;
-            padding: 14px 16px;
+            background: #fff;
+            padding: 10px 16px;
             position: sticky;
             top: 0;
             z-index: 5;
+            border-bottom: 1px solid #E3E7ED;
         }
-        header .isi { max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: 10px; }
-        header h1 { font-size: 19px; margin: 0; font-weight: 700; letter-spacing: .2px; }
-        header small { display: block; font-size: 11.5px; opacity: .75; font-weight: 400; }
+        header .isi { max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+        header img { display: block; height: 34px; width: auto; flex: none; }
+        header small { flex: 1; min-width: 0; text-align: right; font-size: 11.5px; line-height: 1.25; color: var(--muted); }
+
+        .aturan {
+            margin-bottom: 14px; padding: 14px 14px 12px; border-radius: 14px; background: var(--card);
+            border-left: 4px solid var(--accent); box-shadow: 0 0 10px rgba(0,0,0,.04);
+        }
+        .aturan h2 { margin: 0 0 8px; font-size: 14px; color: var(--primary); }
+        .aturan ol { margin: 0; padding-left: 20px; font-size: 12.5px; line-height: 1.45; color: #2B3645; }
+        .aturan li { margin-bottom: 5px; }
+        .aturan li:last-child { margin-bottom: 0; }
         main { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; }
 
         .tombol-baris { display: flex; gap: 10px; }
@@ -106,7 +118,7 @@
         .chip-mirip span { font-size: 9.5px; font-weight: 600; }
         .zona {
             display: inline-block; margin-top: 12px; padding: 5px 10px; border-radius: 8px;
-            background: rgba(212,160,23,.14); color: #7A5C00; font-weight: 700; font-size: 12.5px;
+            background: rgba(242,107,0,.12); color: #A84300; font-weight: 700; font-size: 12.5px;
         }
         .info { margin-top: 10px; }
         .info div { display: flex; gap: 8px; font-size: 12.5px; margin-bottom: 4px; }
@@ -143,12 +155,22 @@
 <body data-model-versi="{{ $modelVersi }}">
 <header>
     <div class="isi">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D4A017" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>
-        <h1>Loop <small>Pembanding material berdasarkan foto</small></h1>
+        <img src="/images/geolens-logo.png" alt="GeoLens" width="155" height="34">
+        <small>Pembanding material berdasarkan foto</small>
     </div>
 </header>
 
 <main>
+    <section class="aturan" aria-label="Aturan pengambilan gambar">
+        <h2>Aturan pengambilan gambar</h2>
+        <ol>
+            <li>Ambil gambar dengan warna material yang asli.</li>
+            <li>Jika material batu, bersihkan dulu permukaannya. Bila perlu, belah batu tersebut lalu ambil gambar pada belahannya.</li>
+            <li>Jika material soil, bersihkan pengotor di permukaan sebelum mengambil gambar.</li>
+            <li>Ambil gambar di tempat terang atau dengan cahaya yang cukup.</li>
+        </ol>
+    </section>
+
     <div class="tombol-baris">
         <button class="tombol utama" id="btn-kamera" type="button" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -188,7 +210,7 @@
     const UKURAN = 224;
     const BATAS_MINIMUM = 0.70;
     const MODEL_VERSI = document.body.dataset.modelVersi;
-    const URL_MODEL = `/loop/model/${encodeURIComponent(MODEL_VERSI)}.onnx`;
+    const URL_MODEL = `/geolens/model/${encodeURIComponent(MODEL_VERSI)}.onnx`;
     const URL_DATA = '/api/loop/sampel';
     const KUNCI_CACHE = 'loop_data_v1';
     const URUTAN_KADAR = [
@@ -479,7 +501,7 @@
         m.className = 'modal';
         m.innerHTML = `<div class="modal-isi">
             <button type="button" class="modal-tutup" aria-label="Tutup">×</button>
-            <img alt="Foto referensi" src="/loop/foto/${encodeURIComponent(code)}">
+            <img alt="Foto referensi" src="/geolens/foto/${encodeURIComponent(code)}">
             <div class="modal-cap">${esc(judul)} • foto referensi, bukan foto Anda</div>
         </div>`;
         m.addEventListener('click', (e) => {
@@ -512,7 +534,7 @@
             el.statusBox.style.display = 'none'; // sembunyikan setelah siap; muncul lagi hanya bila galat
         } catch (e) {
             el.statusBox.style.display = '';
-            setStatus(e.message || 'Gagal menyiapkan Loop.', { galat: true, persen: null });
+            setStatus(e.message || 'Gagal menyiapkan GeoLens.', { galat: true, persen: null });
             console.error('[Loop]', e);
         }
         perbaruiTombol();
